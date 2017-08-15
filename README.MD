@@ -67,7 +67,7 @@ If you instead want to handle the running on your own thread, do not want to use
 TL;DR / Summary, every method in the AuthenticatingAPICalls will have an overloaded option that takes in a listener. If you use the one with the listener, the response will be void and is intead sent back on the interface link. If you use the one without the listener, the response is instant and requires thread management.
 
 
-###Logging JSON Responses
+### Logging JSON Responses
 
 ```java
 WebCallsLogging.setJsonLogging(true);
@@ -75,7 +75,7 @@ WebCallsLogging.setJsonLogging(true);
 
 If you want to view the responses from the server in your logcat for debugging purposes, simply type the code to the right anywhere and it will set the logging to true until you specify false or remove the set to true code.
 
-###Nested Libraries
+### Nested Libraries
 
 This library utilizes the following Dependencies:
 
