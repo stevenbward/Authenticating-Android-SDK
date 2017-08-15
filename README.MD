@@ -51,12 +51,6 @@ A few important details that apply to all using the SDK:
 * Also with regards to the User's accessCode, it is linked directly to the companyId. If you have multiple users, their access codes will be unique (while in active state) and match to the companyId. If you use our service for more than one company, you will need to use multiple companyId variables to differentiate between the two. 
 
 
-* Make sure you have setup an event via the <a href='https://admin.Authenticating.co/'>Admin Portal</a> in order to test data. If you have no data setup, you will continually receive nothing back from the server.
-
-
-* For more the original endpoint links, see <a href='http://api.Authenticating.co/help'>this link</a> here.
-
-
 ### API Calls
 All api calls can be found in the <b>AuthenticatingAPICalls</b> class. This class contains static methods which serve as a wrapper to access the API. Each of the methods contain a counterpart/ partner overloaded method that differs in that it takes in or exludes the OnTaskComplete interface listener.
 
