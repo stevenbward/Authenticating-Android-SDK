@@ -25,7 +25,7 @@ public class AuthenticatingConstants {
     public static final int TAG_SIMPLE_RESPONSE_OBJ = 19000;
     public static final int TAG_ERROR_RESPONSE = 19001;
     public static final int TAG_AVAILABLE_NETWORKS = 19002;
-    public static final int TAG_IMAGE_UPLOAD_PROBLEMS = 19003;
+    public static final int TAG_LIST_OF_STRINGS = 19003;
     public static final int TAG_USER_HEADER = 19004;
     public static final int TAG_QUIZ_QUESTIONS_HEADER = 19005;
 
