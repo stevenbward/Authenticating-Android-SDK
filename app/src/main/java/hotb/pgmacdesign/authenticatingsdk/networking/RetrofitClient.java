@@ -24,6 +24,7 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.CallAdapter;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
@@ -43,7 +44,7 @@ public class RetrofitClient {
 
     private String urlBase;
     private Map<String, String> headers;
-    //private HttpLoggingInterceptor.Level logLevel;
+    private HttpLoggingInterceptor.Level logLevel;
     private int readTimeout, writeTimeout;
     private String dateFormat;
     private Class serviceInterface;
@@ -56,7 +57,7 @@ public class RetrofitClient {
     private RetrofitClient(RetrofitClient.Builder builder) {
         this.urlBase = builder.builder_urlBase;
         this.headers = builder.builder_headers;
-        //this.logLevel = builder.builder_logLevel;
+        this.logLevel = builder.builder_logLevel;
         this.dateFormat = builder.builder_dateFormat;
         this.readTimeout = builder.builder_readTimeout;
         this.writeTimeout = builder.builder_writeTimeout;
@@ -120,14 +121,11 @@ public class RetrofitClient {
             }
         };
 
-        //Next, we set the logging level
-        /*
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         if(logLevel == null){
             logLevel = HttpLoggingInterceptor.Level.NONE;
         }
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-        */
+        logging.setLevel(logLevel);
 
         //Next, create the OkHttpClient
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -146,7 +144,7 @@ public class RetrofitClient {
 
         //Add logging and interceptor
         builder.addInterceptor(interceptor);
-        //builder.addInterceptor(logging);
+        builder.addInterceptor(logging);
 
         //Configure SSL
         builder = configureClient(builder);
@@ -233,7 +231,7 @@ public class RetrofitClient {
     //Builder class below
     protected static final class Builder <T> {
 
-        //HttpLoggingInterceptor.Level builder_logLevel;
+        HttpLoggingInterceptor.Level builder_logLevel;
         static final int SIXTY_SECONDS = (int)(1000*60);
         String builder_urlBase;
         Class<T> builder_serviceInterface;
@@ -259,6 +257,9 @@ public class RetrofitClient {
             this.setTimeouts(SIXTY_SECONDS, SIXTY_SECONDS);
         }
 
+        public void setLogLevel(HttpLoggingInterceptor.Level builder_logLevel) {
+            this.builder_logLevel = builder_logLevel;
+        }
 
         /**
          * Set a custom factory in case you want to add a special one (IE RX Java)

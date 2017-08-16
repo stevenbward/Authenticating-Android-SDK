@@ -24,7 +24,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.1'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.2'
     }
 }
 ```
@@ -83,9 +83,12 @@ This library utilizes the following Dependencies:
 
 * <a href='https://github.com/square/okhttp'>Okhttp 3.8.1</a>
 
+* <a href='https://github.com/square/okhttp/tree/master/okhttp-logging-interceptor'>OkHttp Logging 3.8.1</a>
+
 * <a href='https://github.com/square/retrofit/tree/master/retrofit-converters/gson'>Gson Converter 2.3.0 (Via Retrofit)</a>
 
 * <a href='https://github.com/google/gson'>Gson 2.8.1</a>
+
 
 ### Constant Integer Tags
 If you choose to use the API Calls that use the OnTaskComplete listener, they will send back an integer tag that defines the return type so you don't need to run if checks on instanceof. The int tags it uses are located in the Constants class under the misc package. I have listed the most used ones here:

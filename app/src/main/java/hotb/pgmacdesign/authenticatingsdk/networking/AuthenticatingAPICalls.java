@@ -32,6 +32,7 @@ import hotb.pgmacdesign.authenticatingsdk.datamodels.UploadPhotosObj;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj;
 import hotb.pgmacdesign.authenticatingsdk.interfaces.OnTaskCompleteListener;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -77,15 +78,14 @@ public class AuthenticatingAPICalls {
         if (shouldResetService) {
             RetrofitClient.Builder builder = new RetrofitClient.Builder(APIService.class, URL_BASE);
             if (WebCallsLogging.isJsonLogging()) {
-                //Logging.m("setting body");
-                //builder.setLogLevel(HttpLoggingInterceptor.Level.BODY);
+                Logging.m("Updating Logging to: True");
+                builder.setLogLevel(HttpLoggingInterceptor.Level.BODY);
             } else {
-                //Logging.m("setting none");
-                //builder.setLogLevel(HttpLoggingInterceptor.Level.NONE);
-                //builder.setLogLevel(Level.ALL)
+                Logging.m("Updating Logging to: False");
+                builder.setLogLevel(HttpLoggingInterceptor.Level.NONE);
             }
             builder.setCustomConverterFactory(new CustomConverterFactory());
-            builder.setTimeouts(60000, 60000);
+            builder.setTimeouts(30000, 30000);
 
             try {
                 myService = builder.build().buildServiceClient();
