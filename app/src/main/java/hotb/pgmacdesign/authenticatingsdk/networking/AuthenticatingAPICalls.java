@@ -940,17 +940,21 @@ public class AuthenticatingAPICalls {
                 Bitmap b1 = photo1Bitmap, b2 = photo2Bitmap;
 
                 try {
-                    b1 = shrinkPhoto(b1, 8);
+                    while(isBitmapTooLarge(b1)){
+                        b1 = shrinkPhoto(b1, 2);
+                    }
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
-                    b1 = shrinkPhoto(b1, 12);
+                    b1 = shrinkPhoto(b1, 8);
                 }
 
                 try {
-                    b2 = shrinkPhoto(b2, 8);
+                    while(isBitmapTooLarge(b2)){
+                        b2 = shrinkPhoto(b2, 2);
+                    }
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
-                    b2 = shrinkPhoto(b2, 12);
+                    b2 = shrinkPhoto(b2, 8);
                 }
 
                 UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
@@ -979,6 +983,8 @@ public class AuthenticatingAPICalls {
                     toReturn = (SimpleResponseObj) response.body();
                     AuthenticatingAPICalls.printOutResponseJson(toReturn,
                             AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                    listener.onTaskComplete(toReturn,
+                            AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
                 } catch (IOException ioe) {
                     listener.onTaskComplete(buildGenericErrorObject(),
                             AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1717,17 +1723,21 @@ public class AuthenticatingAPICalls {
             }
 
             try {
-                bitmap1 = shrinkPhoto(bitmap1, 8);
+                while(isBitmapTooLarge(bitmap1)){
+                    bitmap1 = shrinkPhoto(bitmap1, 2);
+                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap1 = shrinkPhoto(bitmap1, 12);
+                bitmap1 = shrinkPhoto(bitmap1, 8);
             }
 
             try {
-                bitmap2 = shrinkPhoto(bitmap2, 8);
+                while(isBitmapTooLarge(bitmap2)){
+                    bitmap2 = shrinkPhoto(bitmap2, 2);
+                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap2 = shrinkPhoto(bitmap2, 12);
+                bitmap2 = shrinkPhoto(bitmap2, 8);
             }
 
             resizedBitmap1 = bitmap1;
