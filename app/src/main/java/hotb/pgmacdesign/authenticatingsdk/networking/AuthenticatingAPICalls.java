@@ -935,8 +935,13 @@ public class AuthenticatingAPICalls {
         }
 
         new AsyncTask<Void, Void, Void>() {
+
+            private AuthenticatingException authE;
+            private SimpleResponseObj toReturn;
             @Override
             protected Void doInBackground(Void... params) {
+                this.authE = null;
+                this.toReturn = null;
                 Bitmap b1 = photo1Bitmap, b2 = photo2Bitmap;
 
                 try {
@@ -964,8 +969,8 @@ public class AuthenticatingAPICalls {
                     base64Image1 = encodeImage(b1);
                     base64Image2 = encodeImage(b2);
                 } catch (Exception e) {
-                    listener.onTaskComplete(buildErrorObject("Could not convert image to base64: " + e.getMessage()),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    this.authE = buildErrorObject("Could not convert image to base64: " + e.getMessage());
+
                     return null;
                 }
 
@@ -973,30 +978,42 @@ public class AuthenticatingAPICalls {
                 uploadPhotosObj.setImg2(base64Image2);
 
                 Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
-                SimpleResponseObj toReturn = null;
+
                 try {
                     Response response = call.execute();
 
                     //Check the Error first
                     ErrorHandler.checkForAuthenticatingError(response);
 
-                    toReturn = (SimpleResponseObj) response.body();
+                    this.toReturn = (SimpleResponseObj) response.body();
                     AuthenticatingAPICalls.printOutResponseJson(toReturn,
                             AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(toReturn,
-                            AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
                 } catch (IOException ioe) {
-                    listener.onTaskComplete(buildGenericErrorObject(),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    this.authE = buildGenericErrorObject();
                     AuthenticatingAPICalls.printOutResponseJson(buildGenericErrorObject(),
                             AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
                 } catch (AuthenticatingException authE) {
-                    listener.onTaskComplete(authE,
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    this.authE = authE;
                     AuthenticatingAPICalls.printOutResponseJson(authE,
                             AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
                 }
                 return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if(authE != null){
+                    listener.onTaskComplete(authE,
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                } else {
+                    if(toReturn != null) {
+                        listener.onTaskComplete(toReturn,
+                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    } else {
+                        listener.onTaskComplete(buildGenericErrorObject(),
+                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    }
+                }
             }
         }.execute();
     }
