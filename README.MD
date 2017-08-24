@@ -2,7 +2,7 @@
 Authenticating is a verification platform that helps verify individuals through a variety of tests; the SDK allows companies to develop costom applications that utilize these various tests. Currently we offer solutions for iOS and Android platforms via an SDK as well as an open Api.
 
 # Link To Full Documentation:
-<a href='https://www.authenticating.com/api-docs-1/'>Full Documentation Can Be Found Here</a>
+<a href='https://docs.authenticating.com/'>Full Documentation Can Be Found Here</a>
 
 # Android Authenticating Quickstart Guide
 This is the code for the Authenticating SDK. The examples section is in a different respository. 
