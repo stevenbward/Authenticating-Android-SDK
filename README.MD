@@ -24,7 +24,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.2'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.4'
     }
 }
 ```
