@@ -940,21 +940,17 @@ public class AuthenticatingAPICalls {
                 Bitmap b1 = photo1Bitmap, b2 = photo2Bitmap;
 
                 try {
-                    while(isBitmapTooLarge(b1)){
-                        b1 = shrinkPhoto(b1, 2);
-                    }
+                    b1 = shrinkPhoto(b1, 8);
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
-                    b1 = shrinkPhoto(b1, 8);
+                    b1 = shrinkPhoto(b1, 12);
                 }
 
                 try {
-                    while(isBitmapTooLarge(b2)){
-                        b2 = shrinkPhoto(b2, 2);
-                    }
+                    b2 = shrinkPhoto(b2, 8);
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
-                    b2 = shrinkPhoto(b2, 8);
+                    b2 = shrinkPhoto(b2, 12);
                 }
 
                 UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
@@ -1721,21 +1717,17 @@ public class AuthenticatingAPICalls {
             }
 
             try {
-                while(isBitmapTooLarge(bitmap1)){
-                    bitmap1 = shrinkPhoto(bitmap1, 2);
-                }
+                bitmap1 = shrinkPhoto(bitmap1, 8);
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap1 = shrinkPhoto(bitmap1, 8);
+                bitmap1 = shrinkPhoto(bitmap1, 12);
             }
 
             try {
-                while(isBitmapTooLarge(bitmap2)){
-                    bitmap2 = shrinkPhoto(bitmap2, 2);
-                }
+                bitmap2 = shrinkPhoto(bitmap2, 8);
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap2 = shrinkPhoto(bitmap2, 8);
+                bitmap2 = shrinkPhoto(bitmap2, 12);
             }
 
             resizedBitmap1 = bitmap1;
