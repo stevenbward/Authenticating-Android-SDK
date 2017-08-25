@@ -13,8 +13,6 @@ public class VerifyQuizObj {
     private String accessCode;
     @SerializedName("quizId")
     private String quizId;
-    @SerializedName("lexisNexisID")
-    private String lexisNexisID;
     @SerializedName("transactionID")
     private String transactionID;
     @SerializedName("responseUniqueId")
@@ -38,13 +36,6 @@ public class VerifyQuizObj {
         this.quizId = quizId;
     }
 
-    protected String getLexisNexisID() {
-        return lexisNexisID;
-    }
-
-    public void setLexisNexisID(String lexisNexisID) {
-        this.lexisNexisID = lexisNexisID;
-    }
 
     protected String getTransactionID() {
         return transactionID;

@@ -104,7 +104,7 @@ public interface APIService {
      * Verify the quiz results to complete the Identity test quiz
      *
      * @param companyAPIKey
-     * @param verifyQuizObj Required fields include: accessCode, quizId, lexisNexisId, transactionId,
+     * @param verifyQuizObj Required fields include: accessCode, quizId, transactionId,
      *                      responseUniqueId, and an array of Answers objects.
      *                      {@link hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj.Answer}
      * @return {@link SimpleResponseObj}
