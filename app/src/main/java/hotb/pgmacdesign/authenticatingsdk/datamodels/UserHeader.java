@@ -38,6 +38,8 @@ public class UserHeader extends TopLevelObj {
         private String firstName;
         @SerializedName("lastName")
         private String lastName;
+        @SerializedName("country")
+        private String country;
         @SerializedName("year")
         private Integer year;
         @SerializedName("month")
@@ -54,6 +56,14 @@ public class UserHeader extends TopLevelObj {
         private String zipcode;
         @SerializedName("ssn")
         private String ssn;
+
+        public String getCountry() {
+            return country;
+        }
+
+        public void setCountry(String country) {
+            this.country = country;
+        }
 
         public String getSsn() {
             return ssn;

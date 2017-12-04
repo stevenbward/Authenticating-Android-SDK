@@ -36,6 +36,10 @@ public class CompanyHeader extends TopLevelObj {
         @SerializedName("networks")
         private List<String> allowedNetworks;
 
+        public String getCompanyId() {
+            return companyId;
+        }
+
         public List<String> getAllowedNetworks() {
             return allowedNetworks;
         }

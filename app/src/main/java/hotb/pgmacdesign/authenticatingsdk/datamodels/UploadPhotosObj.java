@@ -20,6 +20,20 @@ public class UploadPhotosObj {
     private String img1;
     @SerializedName("img2")
     private String img2;
+
+    @SerializedName("idFront")
+    private String idFront;
+    @SerializedName("idBack")
+    private String idBack;
+
+    public void setIdFront(String idFront) {
+        this.idFront = idFront;
+    }
+
+    public void setIdBack(String idBack) {
+        this.idBack = idBack;
+    }
+
     public void setImg1(String img1) {
         this.img1 = img1;
     }
