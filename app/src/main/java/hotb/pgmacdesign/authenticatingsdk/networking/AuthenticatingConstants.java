@@ -55,7 +55,7 @@ public class AuthenticatingConstants {
     protected static final Type TYPE_QUIZ_QUESTIONS_HEADER = new TypeToken<QuizObjectHeader>() {
     }.getType();
 
-    protected static final long MAX_SIZE_IMAGE_UPLOAD = 10000000;
+    protected static final long MAX_SIZE_IMAGE_UPLOAD = 7500000;
 
     //////////////////////////////////////
     //MediaTypes (For Multipart Uploads)//

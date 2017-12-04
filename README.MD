@@ -18,13 +18,22 @@ This is the code for the Authenticating SDK. The examples section is in a differ
 allprojects {
     repositories {
         maven { url 'https://jitpack.io' }
+		//Don't forget this line if you are using the AppCompat Libs
+		maven { url "https://maven.google.com" }
     }
 }
 
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.8'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.9'
+        compile 'com.squareup.retrofit2:retrofit:2.3.0'
+        compile 'com.squareup.okhttp3:okhttp:3.9.0'
+        compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
+        compile 'com.squareup.retrofit2:converter-gson:2.3.0'
+        compile 'com.google.code.gson:gson:2.8.1'
+        //May be omitted 
+        compile 'com.squareup.okio:okio:1.13.0'
     }
 }
 ```

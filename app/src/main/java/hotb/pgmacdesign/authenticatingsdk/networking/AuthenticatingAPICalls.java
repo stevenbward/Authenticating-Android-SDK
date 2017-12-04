@@ -352,8 +352,11 @@ public class AuthenticatingAPICalls {
 
         if (isBitmapTooLarge(photo1Bitmap)) {
             try {
-                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
-                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
+                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo1Bitmap,
+                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                photo1Bitmap = AuthenticatingAPICalls.resizePhoto(photo1Bitmap, toShrink);
+//                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
+//                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
                 //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -361,8 +364,11 @@ public class AuthenticatingAPICalls {
         }
         if (isBitmapTooLarge(photo2Bitmap)) {
             try {
-                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
-                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
+                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo2Bitmap,
+                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                photo2Bitmap = AuthenticatingAPICalls.resizePhoto(photo2Bitmap, toShrink);
+//                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
+//                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
                 //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -382,6 +388,131 @@ public class AuthenticatingAPICalls {
         uploadPhotosObj.setImg1(base64Image1);
         uploadPhotosObj.setImg2(base64Image2);
         Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+        SimpleResponseObj toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            ErrorHandler.checkForAuthenticatingError(response);
+
+            toReturn = (SimpleResponseObj) response.body();
+            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @param base64EncodeIdBack  Second Photo File already converted to base64 encoded String
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadId(String companyAPIKey, String accessCode,
+                                                  String base64EncodedIdFront,
+                                                  String base64EncodeIdBack) throws AuthenticatingException {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            return null;
+        }
+
+        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
+                StringUtilities.isNullOrEmpty(base64EncodeIdBack)) {
+            return null;
+        }
+
+        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
+        uploadPhotosObj.setAccessCode(accessCode);
+        uploadPhotosObj.setIdFront(base64EncodedIdFront);
+        uploadPhotosObj.setIdBack(base64EncodeIdBack);
+        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+        SimpleResponseObj toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            ErrorHandler.checkForAuthenticatingError(response);
+
+            toReturn = (SimpleResponseObj) response.body();
+            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @param idBackBitmap  Second Photo File to parse.
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadId(String companyAPIKey, String accessCode,
+                                                  Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            return null;
+        }
+
+        if (idFrontBitmap == null || idBackBitmap == null) {
+            return null;
+        }
+
+        if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
+                idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
+            return null;
+        }
+
+
+        if (isBitmapTooLarge(idFrontBitmap)) {
+            try {
+                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idFrontBitmap,
+                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap, toShrink);
+//                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
+//                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
+                //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (isBitmapTooLarge(idBackBitmap)) {
+            try {
+                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idBackBitmap,
+                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap, toShrink);
+//                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
+//                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
+                //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
+        uploadPhotosObj.setAccessCode(accessCode);
+        String idFront = null, idBack = null;
+        try {
+            idFront = encodeImage(idFrontBitmap);
+            idBack = encodeImage(idBackBitmap);
+        } catch (Exception e) {
+            return null;
+        }
+
+        uploadPhotosObj.setIdFront(idFront);
+        uploadPhotosObj.setIdBack(idBack);
+        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
         SimpleResponseObj toReturn = null;
         try {
             Response response = call.execute();
@@ -944,9 +1075,14 @@ public class AuthenticatingAPICalls {
                 this.toReturn = null;
                 Bitmap b1 = photo1Bitmap, b2 = photo2Bitmap;
 
+
+
+
                 try {
-                    while(isBitmapTooLarge(b1)){
-                        b1 = shrinkPhoto(b1, 2);
+                    if(isBitmapTooLarge(b1)){
+                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo1Bitmap,
+                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                        b1 = AuthenticatingAPICalls.resizePhoto(photo1Bitmap, toShrink);
                     }
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
@@ -954,13 +1090,19 @@ public class AuthenticatingAPICalls {
                 }
 
                 try {
-                    while(isBitmapTooLarge(b2)){
-                        b2 = shrinkPhoto(b2, 2);
+                    if(isBitmapTooLarge(b2)){
+                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo2Bitmap,
+                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                        b2 = AuthenticatingAPICalls.resizePhoto(photo2Bitmap, toShrink);
                     }
                 } catch (OutOfMemoryError oom){
                     //File too large, resize to very small
                     b2 = shrinkPhoto(b2, 8);
                 }
+
+                Logging.m("Authenticating API Calls, 965");
+                Logging.m("b1 size == " + b1.getByteCount());
+                Logging.m("b2 size == " + b2.getByteCount());
 
                 UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
                 uploadPhotosObj.setAccessCode(accessCode);
@@ -968,6 +1110,8 @@ public class AuthenticatingAPICalls {
                 try {
                     base64Image1 = encodeImage(b1);
                     base64Image2 = encodeImage(b2);
+                    Logging.m("base64Image1 length == " + base64Image1.length());
+                    Logging.m("base64Image2 length == " + base64Image2.length());
                 } catch (Exception e) {
                     this.authE = buildErrorObject("Could not convert image to base64: " + e.getMessage());
 
@@ -1051,6 +1195,189 @@ public class AuthenticatingAPICalls {
         uploadPhotosObj.setImg1(base64EncodedImage1);
         uploadPhotosObj.setImg2(base64EncodeImage2);
         Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+        call.enqueue(new Callback<SimpleResponseObj>() {
+            @Override
+            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+                try {
+                    ErrorHandler.checkForAuthenticatingError(response);
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+
+                } catch (AuthenticatingException authE) {
+                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+                t.printStackTrace();
+                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            }
+        });
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification. This method will run all bitmap conversion
+     * and base64 string encoding on a thread and not impact the main UI thread.
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @param idBackBitmap  Second Photo File to parse.
+     */
+    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
+                                     final String companyAPIKey, final String accessCode,
+                                     final Bitmap idFrontBitmap, final Bitmap idBackBitmap) {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        if (idFrontBitmap == null || idBackBitmap == null) {
+            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
+                idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
+            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        new AsyncTask<Void, Void, Void>() {
+
+            private AuthenticatingException authE;
+            private SimpleResponseObj toReturn;
+            @Override
+            protected Void doInBackground(Void... params) {
+                this.authE = null;
+                this.toReturn = null;
+                Bitmap b1Front = idFrontBitmap, b2Back = idBackBitmap;
+
+
+
+
+                try {
+                    if(isBitmapTooLarge(b1Front)){
+                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idFrontBitmap,
+                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                        b1Front = AuthenticatingAPICalls.resizePhoto(idFrontBitmap, toShrink);
+                    }
+                } catch (OutOfMemoryError oom){
+                    //File too large, resize to very small
+                    b1Front = shrinkPhoto(b1Front, 8);
+                }
+
+                try {
+                    if(isBitmapTooLarge(b2Back)){
+                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idBackBitmap,
+                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                        b2Back = AuthenticatingAPICalls.resizePhoto(idBackBitmap, toShrink);
+                    }
+                } catch (OutOfMemoryError oom){
+                    //File too large, resize to very small
+                    b2Back = shrinkPhoto(b2Back, 8);
+                }
+
+                UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
+                uploadPhotosObj.setAccessCode(accessCode);
+                String idFront = null, idBack = null;
+                try {
+                    idFront = encodeImage(b1Front);
+                    idBack = encodeImage(b2Back);
+                } catch (Exception e) {
+                    this.authE = buildErrorObject("Could not convert image to base64: " + e.getMessage());
+                    return null;
+                }
+
+                uploadPhotosObj.setIdFront(idFront);
+                uploadPhotosObj.setIdBack(idBack);
+
+                Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+
+                try {
+                    Response response = call.execute();
+
+                    //Check the Error first
+                    ErrorHandler.checkForAuthenticatingError(response);
+
+                    this.toReturn = (SimpleResponseObj) response.body();
+                    AuthenticatingAPICalls.printOutResponseJson(toReturn,
+                            AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                } catch (IOException ioe) {
+                    this.authE = buildGenericErrorObject();
+                    AuthenticatingAPICalls.printOutResponseJson(buildGenericErrorObject(),
+                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (AuthenticatingException authE) {
+                    this.authE = authE;
+                    AuthenticatingAPICalls.printOutResponseJson(authE,
+                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if(authE != null){
+                    listener.onTaskComplete(authE,
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                } else {
+                    if(toReturn != null) {
+                        listener.onTaskComplete(toReturn,
+                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    } else {
+                        listener.onTaskComplete(buildGenericErrorObject(),
+                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param listener            {@link OnTaskCompleteListener}
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @param base64EncodedIdBack  Second Photo File already converted to base64 encoded String
+     */
+    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
+                                     String companyAPIKey, String accessCode,
+                                     String base64EncodedIdFront, String base64EncodedIdBack) {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
+                StringUtilities.isNullOrEmpty(base64EncodedIdBack)) {
+            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
+        uploadPhotosObj.setAccessCode(accessCode);
+        uploadPhotosObj.setIdFront(base64EncodedIdFront);
+        uploadPhotosObj.setIdBack(base64EncodedIdBack);
+        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
         call.enqueue(new Callback<SimpleResponseObj>() {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
@@ -1585,11 +1912,71 @@ public class AuthenticatingAPICalls {
     }
 
     private static boolean isBitmapTooLarge(@NonNull Bitmap bmp) {
-        int size = (bmp.getRowBytes() * bmp.getHeight());
-        if (size > AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD) {
-            return true;
-        } else {
+        return isImageTooLarge(bmp, AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+    }
+
+    /**
+     * Determine if a bitmap is too large as compared to passed param
+     * @param bmp Bitmap to check
+     * @param desiredSizeInBytes Desired size (in Bytes) to check against
+     * @return boolean, if true, bitmap is larger than the desired size, else, it is not.
+     */
+    private static boolean isImageTooLarge(@NonNull Bitmap bmp, long desiredSizeInBytes){
+        long bitmapSize = (bmp.getRowBytes() * bmp.getHeight());
+        float shrinkFactor = desiredSizeInBytes / bitmapSize;
+        if(shrinkFactor >= 1){
             return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Determine the float value needed to resize the image so that it is less in size (Bytes)
+     * than the value passed
+     * @param bmp Bitmap to check
+     * @param desiredSizeInBytes Desired size in bytes of the image
+     * @return float value to resize. IE, if 0.34 is returned, the bitmap in question needs
+     *         to be shrunk down by 34% to reach the desired size
+     */
+    private static float getImageResizeFactor(@NonNull Bitmap bmp, long desiredSizeInBytes){
+        long bitmapSize = (bmp.getRowBytes() * bmp.getHeight());
+        return (desiredSizeInBytes / bitmapSize);
+    }
+
+    /**
+     * Resize a photo
+     * @param bmp Bitmap to resize
+     * @param factorToDivide Factor to divide by. if (IE) 2 is passed, it will cut the
+     *                       image in half, 10 will cut it down 10x in size
+     * @return Resized bitmap. If it fails, will send back original
+     */
+    private static Bitmap resizePhoto(@NonNull Bitmap bmp, int factorToDivide){
+        if(factorToDivide <= 1){
+            factorToDivide = 2;
+        }
+        try {
+            return Bitmap.createScaledBitmap(bmp, (int)(bmp.getWidth() / factorToDivide),
+                    (int)(bmp.getHeight() / factorToDivide), true);
+        } catch (Exception e){
+            return bmp;
+        }
+    }
+
+    /**
+     * Resize a photo
+     * @param bmp Bitmap to resize
+     * @param factorToMultiply Factor to multiply by. if (IE) 1.5 is passed, it will increase
+     *                         it by 1.5 times. If 0.4 is passed, it will decrease it by
+     *                         40% of its original size.
+     * @return Resized bitmap. If it fails, will send back original
+     */
+    private static Bitmap resizePhoto(@NonNull Bitmap bmp, float factorToMultiply){
+        try {
+            return Bitmap.createScaledBitmap(bmp, (int)(bmp.getWidth() * factorToMultiply),
+                    (int)(bmp.getHeight() * factorToMultiply), true);
+        } catch (Exception e){
+            return bmp;
         }
     }
 
@@ -1740,18 +2127,28 @@ public class AuthenticatingAPICalls {
             }
 
             try {
-                while(isBitmapTooLarge(bitmap1)){
-                    bitmap1 = shrinkPhoto(bitmap1, 2);
+                if(isBitmapTooLarge(bitmap1)){
+                    float toShrink = AuthenticatingAPICalls.getImageResizeFactor(bitmap1,
+                            AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                    bitmap1 = AuthenticatingAPICalls.resizePhoto(bitmap1, toShrink);
                 }
+//                while(isBitmapTooLarge(bitmap1)){
+//                    bitmap1 = shrinkPhoto(bitmap1, 2);
+//                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
                 bitmap1 = shrinkPhoto(bitmap1, 8);
             }
 
             try {
-                while(isBitmapTooLarge(bitmap2)){
-                    bitmap2 = shrinkPhoto(bitmap2, 2);
+                if(isBitmapTooLarge(bitmap2)){
+                    float toShrink = AuthenticatingAPICalls.getImageResizeFactor(bitmap2,
+                            AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
+                    bitmap2 = AuthenticatingAPICalls.resizePhoto(bitmap2, toShrink);
                 }
+//                while(isBitmapTooLarge(bitmap2)){
+//                    bitmap2 = shrinkPhoto(bitmap2, 2);
+//                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
                 bitmap2 = shrinkPhoto(bitmap2, 8);
@@ -1799,6 +2196,7 @@ public class AuthenticatingAPICalls {
             }
         }
     }
+
 
     private static Bitmap shrinkPhoto(@NonNull Bitmap bmp, int factorToDivide){
         if(factorToDivide <= 1){

@@ -30,134 +30,146 @@ public interface APIService {
     /**
      * Send an SMS/ Text MSG to the phone number attached to the user accessCode being sent.
      *
-     * @param companyAPIKey API Key needed for calls
+     * @param authKey API Key needed for calls
      * @param phoneInfo     Only required fields include: accessCode
      * @return {@link TopLevelObj}
      */
     @POST(API + VERSION + "/verifyPhone ")
-    Call<SimpleResponseObj> verifyPhone(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> verifyPhone(@Header("authKey") String authKey,
                                         @Body PhoneVerification phoneInfo
     );
 
     /**
      * Send an SMS/ Text MSG to the phone number attached to the user accessCode being sent.
      *
-     * @param companyAPIKey API Key needed for calls
+     * @param authKey API Key needed for calls
      * @param phoneInfo     Only required fields include: accessCode, smsCode
      * @return {@link SimpleResponseObj}
      */
     @POST(API + VERSION + "/verifyPhoneCode ")
-    Call<SimpleResponseObj> verifyPhoneCode(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> verifyPhoneCode(@Header("authKey") String authKey,
                                             @Body PhoneVerification phoneInfo
     );
 
     /**
      * Verify a User's email
      *
-     * @param companyAPIKey
+     * @param authKey
      * @param user          Only requires accessCode
      * @return {@link SimpleResponseObj}
      */
     @POST(API + VERSION + "/verifyEmail ")
-    Call<SimpleResponseObj> verifyEmail(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> verifyEmail(@Header("authKey") String authKey,
                                         @Body UserHeader.User user
     );
 
     /**
      * Used for passing the verification of social networks
      *
-     * @param companyAPIKey    API Key needed for calls
+     * @param authKey    API Key needed for calls
      * @param socialNetworkObj Only required fields include: accessCode, network,
      *                         socialMediaAccessToken, socialMediaUserId
      * @return {@link SimpleResponseObj}
      */
     @POST(API + VERSION + "/verifySocialNetworks")
-    Call<SimpleResponseObj> verifySocialNetworks(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> verifySocialNetworks(@Header("authKey") String authKey,
                                                  @Body SocialNetworkObj socialNetworkObj
     );
 
     /**
      * Get the available networks for use in Social Networking test
      *
-     * @param companyAPIKey API Key needed for calls
+     * @param authKey API Key needed for calls
      * @param user          Only required fields include: accessCode
      * @return {@link AvailableNetworksHeader}
      */
     @POST(API + VERSION + "/getAvailableNetworks")
-    Call<AvailableNetworksHeader> getAvailableNetworks(@Header("authKey") String companyAPIKey,
+    Call<AvailableNetworksHeader> getAvailableNetworks(@Header("authKey") String authKey,
                                                        @Body UserHeader.User user
     );
 
     /**
      * Get the quiz for the Identity Proof Test
      *
-     * @param companyAPIKey
+     * @param authKey
      * @param user          only required field here is the accessCode
      * @return {@link QuizObjectHeader}
      */
     @POST(API + VERSION + "/getQuiz")
-    Call<QuizObjectHeader> getQuiz(@Header("authKey") String companyAPIKey,
+    Call<QuizObjectHeader> getQuiz(@Header("authKey") String authKey,
                                    @Body UserHeader.User user
     );
 
     /**
      * Verify the quiz results to complete the Identity test quiz
      *
-     * @param companyAPIKey
+     * @param authKey
      * @param verifyQuizObj Required fields include: accessCode, quizId, transactionId,
      *                      responseUniqueId, and an array of Answers objects.
      *                      {@link hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj.Answer}
      * @return {@link SimpleResponseObj}
      */
     @POST(API + VERSION + "/verifyQuiz ")
-    Call<SimpleResponseObj> verifyQuiz(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> verifyQuiz(@Header("authKey") String authKey,
                             @Body VerifyQuizObj verifyQuizObj
     );
 
     /**
      * Background Proof Step, this generates a criminal background report.
      *
-     * @param companyAPIKey
+     * @param authKey
      * @param userObj       only required value is accessCode
      * @return {@link SimpleResponseObj}
      */
     @POST(API + VERSION + "/generateCriminalReport ")
-    Call<SimpleResponseObj> generateCriminalReport(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> generateCriminalReport(@Header("authKey") String authKey,
                                         @Body UserHeader.User userObj
     );
 
     /**
-     * @param companyAPIKey
+     * @param authKey
      * @param userObj       Access code is required. Other fields will be updated if included.
      *                      Fields that can be updated include: email, phone, firstName, lastName,
      *                      address, city, state, zipCode, state, month, day, year, ssn
      * @return {@link UserHeader}
      */
     @POST(API + VERSION + "/updateUser ")
-    Call<UserHeader> updateUser(@Header("authKey") String companyAPIKey,
+    Call<UserHeader> updateUser(@Header("authKey") String authKey,
                                 @Body UserHeader.User userObj
     );
 
     /**
-     * @param companyAPIKey
+     * @param authKey
      * @param userObj       Access code is required.
      * @return {@link UserHeader}
      */
     @POST(API + VERSION + "/getUser ")
-    Call<UserHeader> getUser(@Header("authKey") String companyAPIKey,
+    Call<UserHeader> getUser(@Header("authKey") String authKey,
                              @Body UserHeader.User userObj
     );
 
     /**
      * Upload and compare 2 photos.
-     * @param companyAPIKey
+     * @param authKey
      * @param uploadPhotosObj Required fields here are: accessCode and both img1 / img2. Note that
      *                        both of the images are baseEncoded64 strings.
      * @return
      */
     @POST(API + VERSION + "/comparePhotos")
-    Call<SimpleResponseObj> comparePhotos(@Header("authKey") String companyAPIKey,
+    Call<SimpleResponseObj> comparePhotos(@Header("authKey") String authKey,
                                            @Body UploadPhotosObj uploadPhotosObj
+    );
+
+    /**
+     * Upload a front and back of an ID for identity proof verification
+     * @param authKey
+     * @param uploadPhotosObj Required fields here are: accessCode and both idFront / idBack. Note that
+     *                        both of the images are baseEncoded64 strings.
+     * @return
+     */
+    @POST(API + VERSION + "/uploadId")
+    Call<SimpleResponseObj> uploadId(@Header("authKey") String authKey,
+                                     @Body UploadPhotosObj uploadPhotosObj
     );
 
 }
