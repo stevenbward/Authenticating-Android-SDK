@@ -26,7 +26,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:0.9.9'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.1'
         compile 'com.squareup.retrofit2:retrofit:2.3.0'
         compile 'com.squareup.okhttp3:okhttp:3.9.0'
         compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
@@ -83,7 +83,7 @@ WebCallsLogging.setJsonLogging(true);
 ```
 
 If you want to view the responses from the server in your logcat for debugging purposes, simply type the code to the right anywhere and it will set the logging to true until you specify false or remove the set to true code.
-
+ 
 ### Nested Libraries
 
 This library utilizes the following Dependencies:
