@@ -26,7 +26,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.1'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.4'
         compile 'com.squareup.retrofit2:retrofit:2.3.0'
         compile 'com.squareup.okhttp3:okhttp:3.9.0'
         compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
@@ -36,9 +36,19 @@ android {
         compile 'com.squareup.okio:okio:1.13.0'
     }
 }
+
+//Step 3 (In the Manifest Application Tag)
+<application
+	.
+	.
+	android:largeHeap="true"
+	>
+	
 ```
 
 It is likely you will need Multi-dex enabled if you have a large number of additional libraries enabled as this includes a few dependencies of its own.
+
+As this SDK involves uploading images (2 at a time), you will likely see OutOfMemory exceptions thrown unless you include the third line regarding largeHeap as true in your manifest file. 
 
 The Authenticating android SDK can be installed via gradle as well is using an aar file (sent upon request). Once successfully integrated, the SDK is ready to go without any custom configuration needed. See the Important Notes section for more information regarding customizing details. For more information, please feel free to Contact us:
 
