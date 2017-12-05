@@ -20,7 +20,7 @@ import okhttp3.MediaType;
 
 public class AuthenticatingConstants {
 
-    public static final String BASE_URL = "https://api.authenticating.com/";
+    public static final String BASE_URL= "https://api.authenticating.com/";
 
     public static final int TAG_SIMPLE_RESPONSE_OBJ = 19000;
     public static final int TAG_ERROR_RESPONSE = 19001;
@@ -28,6 +28,7 @@ public class AuthenticatingConstants {
     public static final int TAG_LIST_OF_STRINGS = 19003;
     public static final int TAG_USER_HEADER = 19004;
     public static final int TAG_QUIZ_QUESTIONS_HEADER = 19005;
+    public static final int TAG_UPLOAD_PHOTO_OBJECT = 19006;
 
 
 
@@ -55,7 +56,8 @@ public class AuthenticatingConstants {
     protected static final Type TYPE_QUIZ_QUESTIONS_HEADER = new TypeToken<QuizObjectHeader>() {
     }.getType();
 
-    protected static final long MAX_SIZE_IMAGE_UPLOAD = 7500000;
+    //1 MB
+    protected static final float MAX_SIZE_IMAGE_UPLOAD = 1000000;
 
     //////////////////////////////////////
     //MediaTypes (For Multipart Uploads)//

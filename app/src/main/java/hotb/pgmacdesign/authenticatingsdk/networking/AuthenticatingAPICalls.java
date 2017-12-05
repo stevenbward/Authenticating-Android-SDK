@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.widget.ProgressBar;
 
@@ -16,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -56,6 +56,7 @@ public class AuthenticatingAPICalls {
     private static final String URL_BASE = AuthenticatingConstants.BASE_URL;
 
     private static APIService myService;
+    private static AsyncTask<Void, Void, Void> uploadPhotosAsynctask;
 
     public static APIService getMyService() {
         init();
@@ -352,9 +353,7 @@ public class AuthenticatingAPICalls {
 
         if (isBitmapTooLarge(photo1Bitmap)) {
             try {
-                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo1Bitmap,
-                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                photo1Bitmap = AuthenticatingAPICalls.resizePhoto(photo1Bitmap, toShrink);
+                photo1Bitmap = AuthenticatingAPICalls.resizePhoto(photo1Bitmap);
 //                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
 //                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
                 //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
@@ -364,9 +363,7 @@ public class AuthenticatingAPICalls {
         }
         if (isBitmapTooLarge(photo2Bitmap)) {
             try {
-                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo2Bitmap,
-                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                photo2Bitmap = AuthenticatingAPICalls.resizePhoto(photo2Bitmap, toShrink);
+                photo2Bitmap = AuthenticatingAPICalls.resizePhoto(photo2Bitmap);
 //                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
 //                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
                 //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
@@ -477,9 +474,7 @@ public class AuthenticatingAPICalls {
 
         if (isBitmapTooLarge(idFrontBitmap)) {
             try {
-                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idFrontBitmap,
-                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap, toShrink);
+                idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap);
 //                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
 //                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
                 //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
@@ -489,9 +484,7 @@ public class AuthenticatingAPICalls {
         }
         if (isBitmapTooLarge(idBackBitmap)) {
             try {
-                float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idBackBitmap,
-                        AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap, toShrink);
+                idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap);
 //                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
 //                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
                 //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
@@ -1065,101 +1058,53 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        new AsyncTask<Void, Void, Void>() {
-
-            private AuthenticatingException authE;
-            private SimpleResponseObj toReturn;
+        ConvertPhotosAsync async = new ConvertPhotosAsync(null, new OnTaskCompleteListener() {
             @Override
-            protected Void doInBackground(Void... params) {
-                this.authE = null;
-                this.toReturn = null;
-                Bitmap b1 = photo1Bitmap, b2 = photo2Bitmap;
+            public void onTaskComplete(Object result, int customTag) {
+                if(customTag == AuthenticatingConstants.TAG_UPLOAD_PHOTO_OBJECT) {
+                    UploadPhotosObj uploadPhotosObj = (UploadPhotosObj) result;
+                    if (uploadPhotosObj == null) {
+                        listener.onTaskComplete(buildErrorObject("Could not convert images"),
+                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    } else {
+                        uploadPhotosObj.setAccessCode(accessCode);
+                        Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+                        call.enqueue(new Callback<SimpleResponseObj>() {
+                            @Override
+                            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+                                try {
+                                    ErrorHandler.checkForAuthenticatingError(response);
+                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
+                                } catch (AuthenticatingException authE) {
+                                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                                }
+                            }
 
-
-
-                try {
-                    if(isBitmapTooLarge(b1)){
-                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo1Bitmap,
-                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                        b1 = AuthenticatingAPICalls.resizePhoto(photo1Bitmap, toShrink);
+                            @Override
+                            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+                                t.printStackTrace();
+                                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                            }
+                        });
                     }
-                } catch (OutOfMemoryError oom){
-                    //File too large, resize to very small
-                    b1 = shrinkPhoto(b1, 8);
-                }
-
-                try {
-                    if(isBitmapTooLarge(b2)){
-                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(photo2Bitmap,
-                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                        b2 = AuthenticatingAPICalls.resizePhoto(photo2Bitmap, toShrink);
-                    }
-                } catch (OutOfMemoryError oom){
-                    //File too large, resize to very small
-                    b2 = shrinkPhoto(b2, 8);
-                }
-
-                Logging.m("Authenticating API Calls, 965");
-                Logging.m("b1 size == " + b1.getByteCount());
-                Logging.m("b2 size == " + b2.getByteCount());
-
-                UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-                uploadPhotosObj.setAccessCode(accessCode);
-                String base64Image1 = null, base64Image2 = null;
-                try {
-                    base64Image1 = encodeImage(b1);
-                    base64Image2 = encodeImage(b2);
-                    Logging.m("base64Image1 length == " + base64Image1.length());
-                    Logging.m("base64Image2 length == " + base64Image2.length());
-                } catch (Exception e) {
-                    this.authE = buildErrorObject("Could not convert image to base64: " + e.getMessage());
-
-                    return null;
-                }
-
-                uploadPhotosObj.setImg1(base64Image1);
-                uploadPhotosObj.setImg2(base64Image2);
-
-                Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
-
-                try {
-                    Response response = call.execute();
-
-                    //Check the Error first
-                    ErrorHandler.checkForAuthenticatingError(response);
-
-                    this.toReturn = (SimpleResponseObj) response.body();
-                    AuthenticatingAPICalls.printOutResponseJson(toReturn,
-                            AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                } catch (IOException ioe) {
-                    this.authE = buildGenericErrorObject();
-                    AuthenticatingAPICalls.printOutResponseJson(buildGenericErrorObject(),
-                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                } catch (AuthenticatingException authE) {
-                    this.authE = authE;
-                    AuthenticatingAPICalls.printOutResponseJson(authE,
-                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if(authE != null){
-                    listener.onTaskComplete(authE,
+                } else if (customTag == AuthenticatingConstants.TAG_ERROR_RESPONSE){
+                    listener.onTaskComplete(((AuthenticatingException)result),
                             AuthenticatingConstants.TAG_ERROR_RESPONSE);
                 } else {
-                    if(toReturn != null) {
-                        listener.onTaskComplete(toReturn,
-                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-                    } else {
-                        listener.onTaskComplete(buildGenericErrorObject(),
-                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    }
+                    listener.onTaskComplete(buildErrorObject("Could not convert images"),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
                 }
             }
-        }.execute();
+        }, photo1Bitmap, photo2Bitmap, ConvertPhotosAsync.RequestedReturnType.COMPARE_PHOTOS);
+        async.execute();
     }
 
     /**
@@ -1255,94 +1200,53 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        new AsyncTask<Void, Void, Void>() {
-
-            private AuthenticatingException authE;
-            private SimpleResponseObj toReturn;
+        ConvertPhotosAsync async = new ConvertPhotosAsync(null, new OnTaskCompleteListener() {
             @Override
-            protected Void doInBackground(Void... params) {
-                this.authE = null;
-                this.toReturn = null;
-                Bitmap b1Front = idFrontBitmap, b2Back = idBackBitmap;
+            public void onTaskComplete(Object result, int customTag) {
+                if(customTag == AuthenticatingConstants.TAG_UPLOAD_PHOTO_OBJECT){
+                    UploadPhotosObj uploadPhotosObj = (UploadPhotosObj) result;
+                    if(uploadPhotosObj == null){
+                        listener.onTaskComplete(buildErrorObject("Could not convert images"),
+                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    } else {
+                        uploadPhotosObj.setAccessCode(accessCode);
+                        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+                        call.enqueue(new Callback<SimpleResponseObj>() {
+                            @Override
+                            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+                                try {
+                                    ErrorHandler.checkForAuthenticatingError(response);
+                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
+                                } catch (AuthenticatingException authE) {
+                                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                                }
+                            }
 
-
-
-                try {
-                    if(isBitmapTooLarge(b1Front)){
-                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idFrontBitmap,
-                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                        b1Front = AuthenticatingAPICalls.resizePhoto(idFrontBitmap, toShrink);
+                            @Override
+                            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+                                t.printStackTrace();
+                                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                            }
+                        });
                     }
-                } catch (OutOfMemoryError oom){
-                    //File too large, resize to very small
-                    b1Front = shrinkPhoto(b1Front, 8);
-                }
-
-                try {
-                    if(isBitmapTooLarge(b2Back)){
-                        float toShrink = AuthenticatingAPICalls.getImageResizeFactor(idBackBitmap,
-                                AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                        b2Back = AuthenticatingAPICalls.resizePhoto(idBackBitmap, toShrink);
-                    }
-                } catch (OutOfMemoryError oom){
-                    //File too large, resize to very small
-                    b2Back = shrinkPhoto(b2Back, 8);
-                }
-
-                UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-                uploadPhotosObj.setAccessCode(accessCode);
-                String idFront = null, idBack = null;
-                try {
-                    idFront = encodeImage(b1Front);
-                    idBack = encodeImage(b2Back);
-                } catch (Exception e) {
-                    this.authE = buildErrorObject("Could not convert image to base64: " + e.getMessage());
-                    return null;
-                }
-
-                uploadPhotosObj.setIdFront(idFront);
-                uploadPhotosObj.setIdBack(idBack);
-
-                Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
-
-                try {
-                    Response response = call.execute();
-
-                    //Check the Error first
-                    ErrorHandler.checkForAuthenticatingError(response);
-
-                    this.toReturn = (SimpleResponseObj) response.body();
-                    AuthenticatingAPICalls.printOutResponseJson(toReturn,
-                            AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                } catch (IOException ioe) {
-                    this.authE = buildGenericErrorObject();
-                    AuthenticatingAPICalls.printOutResponseJson(buildGenericErrorObject(),
-                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                } catch (AuthenticatingException authE) {
-                    this.authE = authE;
-                    AuthenticatingAPICalls.printOutResponseJson(authE,
-                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if(authE != null){
-                    listener.onTaskComplete(authE,
+                } else if (customTag == AuthenticatingConstants.TAG_ERROR_RESPONSE){
+                    listener.onTaskComplete(((AuthenticatingException)result),
                             AuthenticatingConstants.TAG_ERROR_RESPONSE);
                 } else {
-                    if(toReturn != null) {
-                        listener.onTaskComplete(toReturn,
-                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-                    } else {
-                        listener.onTaskComplete(buildGenericErrorObject(),
-                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    }
+                    listener.onTaskComplete(buildErrorObject("Could not convert images"),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
                 }
             }
-        }.execute();
+        }, idFrontBitmap, idBackBitmap, ConvertPhotosAsync.RequestedReturnType.UPLOAD_ID);
+        async.execute();
     }
 
     /**
@@ -1921,8 +1825,8 @@ public class AuthenticatingAPICalls {
      * @param desiredSizeInBytes Desired size (in Bytes) to check against
      * @return boolean, if true, bitmap is larger than the desired size, else, it is not.
      */
-    private static boolean isImageTooLarge(@NonNull Bitmap bmp, long desiredSizeInBytes){
-        long bitmapSize = (bmp.getRowBytes() * bmp.getHeight());
+    private static boolean isImageTooLarge(@NonNull Bitmap bmp, float desiredSizeInBytes){
+        long bitmapSize = bmp.getByteCount();
         float shrinkFactor = desiredSizeInBytes / bitmapSize;
         if(shrinkFactor >= 1){
             return false;
@@ -1939,9 +1843,10 @@ public class AuthenticatingAPICalls {
      * @return float value to resize. IE, if 0.34 is returned, the bitmap in question needs
      *         to be shrunk down by 34% to reach the desired size
      */
-    private static float getImageResizeFactor(@NonNull Bitmap bmp, long desiredSizeInBytes){
-        long bitmapSize = (bmp.getRowBytes() * bmp.getHeight());
-        return (desiredSizeInBytes / bitmapSize);
+    private static float getImageResizeFactor(@NonNull Bitmap bmp, float desiredSizeInBytes){
+        long bitmapSize = bmp.getByteCount();
+        float flt = (desiredSizeInBytes / bitmapSize);
+        return flt;
     }
 
     /**
@@ -1959,6 +1864,7 @@ public class AuthenticatingAPICalls {
             return Bitmap.createScaledBitmap(bmp, (int)(bmp.getWidth() / factorToDivide),
                     (int)(bmp.getHeight() / factorToDivide), true);
         } catch (Exception e){
+            e.printStackTrace();
             return bmp;
         }
     }
@@ -1966,16 +1872,18 @@ public class AuthenticatingAPICalls {
     /**
      * Resize a photo
      * @param bmp Bitmap to resize
-     * @param factorToMultiply Factor to multiply by. if (IE) 1.5 is passed, it will increase
-     *                         it by 1.5 times. If 0.4 is passed, it will decrease it by
-     *                         40% of its original size.
      * @return Resized bitmap. If it fails, will send back original
      */
-    private static Bitmap resizePhoto(@NonNull Bitmap bmp, float factorToMultiply){
+    private static Bitmap resizePhoto(@NonNull Bitmap bmp){
         try {
-            return Bitmap.createScaledBitmap(bmp, (int)(bmp.getWidth() * factorToMultiply),
-                    (int)(bmp.getHeight() * factorToMultiply), true);
+            double height = Math.sqrt(AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD /
+                    (((double) bmp.getWidth()) / bmp.getHeight()));
+            double width = (height / bmp.getHeight()) * bmp.getWidth();
+            Bitmap bmp1 = Bitmap.createScaledBitmap(bmp, (int)(width),
+                    (int)(height), true);
+            return bmp1;
         } catch (Exception e){
+            e.printStackTrace();
             return bmp;
         }
     }
@@ -1989,11 +1897,15 @@ public class AuthenticatingAPICalls {
      * This class will be implemented asap in order to make life easier for developers.
      * In the meantime, please convert your own images to bitmaps for comparePhotos()
      */
-    protected static class ConvertPhotosAsync extends AsyncTask<Void, Integer, Void> {
+    protected static class ConvertPhotosAsync extends AsyncTask<Void, Integer, UploadPhotosObj> {
+
+        static enum RequestedReturnType {
+            UPLOAD_ID, COMPARE_PHOTOS
+        }
 
         //Input variables
         private String base64EncodedImage1, base64EncodedImage2;
-        private Bitmap bitmap1, bitmap2;
+        private Bitmap bitmap1OrIDFront, bitmap2OrIDBack;
         private File file1, file2;
         private Uri uri1, uri2;
 
@@ -2002,16 +1914,18 @@ public class AuthenticatingAPICalls {
         private OnTaskCompleteListener listener;
         private Bitmap resizedBitmap1, resizedBitmap2;
         private boolean isString, isBitmap, isFile, isUri;
+        private RequestedReturnType type;
 
         //Output variables
         private String stringOutput1, stringOutput2;
-        private List<String> outputList;
 
         //Error Objects
         private AuthenticatingException error;
 
-        private ConvertPhotosAsync(ProgressBar progressBar, @NonNull OnTaskCompleteListener listener,
-                                   @NonNull String base64EncodedImage1, @NonNull String base64EncodedImage2) {
+        private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
+                                   @NonNull OnTaskCompleteListener listener,
+                                   @NonNull String base64EncodedImage1, @NonNull String base64EncodedImage2,
+                                   @NonNull RequestedReturnType type) {
             this.base64EncodedImage1 = base64EncodedImage1;
             this.base64EncodedImage2 = base64EncodedImage2;
             this.progressBar = progressBar;
@@ -2020,22 +1934,28 @@ public class AuthenticatingAPICalls {
             this.isBitmap = false;
             this.isFile = false;
             this.isUri = false;
+            this.type = type;
         }
 
-        private ConvertPhotosAsync(ProgressBar progressBar, @NonNull OnTaskCompleteListener listener,
-                                   @NonNull Bitmap bitmap1, @NonNull Bitmap bitmap2) {
-            this.bitmap1 = bitmap1;
-            this.bitmap2 = bitmap2;
+        private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
+                                   @NonNull OnTaskCompleteListener listener,
+                                   @NonNull Bitmap bitmap1OrIDFront, @NonNull Bitmap bitmap2OrIDBack,
+                                   @NonNull RequestedReturnType type) {
+            this.bitmap1OrIDFront = bitmap1OrIDFront;
+            this.bitmap2OrIDBack = bitmap2OrIDBack;
             this.progressBar = progressBar;
             this.listener = listener;
             this.isString = false;
             this.isBitmap = true;
             this.isFile = false;
             this.isUri = false;
+            this.type = type;
         }
 
-        private ConvertPhotosAsync(ProgressBar progressBar, @NonNull OnTaskCompleteListener listener,
-                                   @NonNull File imageFile1, @NonNull File imageFile2) {
+        private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
+                                   @NonNull OnTaskCompleteListener listener,
+                                   @NonNull File imageFile1, @NonNull File imageFile2,
+                                   @NonNull RequestedReturnType type) {
             this.file1 = imageFile1;
             this.file2 = imageFile2;
             this.progressBar = progressBar;
@@ -2044,10 +1964,13 @@ public class AuthenticatingAPICalls {
             this.isBitmap = false;
             this.isFile = true;
             this.isUri = false;
+            this.type = type;
         }
 
-        private ConvertPhotosAsync(ProgressBar progressBar, @NonNull OnTaskCompleteListener listener,
-                                   @NonNull Uri imageUri1, @NonNull Uri imageUri2) {
+        private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
+                                   @NonNull OnTaskCompleteListener listener,
+                                   @NonNull Uri imageUri1, @NonNull Uri imageUri2,
+                                   @NonNull RequestedReturnType type) {
             this.uri1 = imageUri1;
             this.uri2 = imageUri2;
             this.progressBar = progressBar;
@@ -2056,24 +1979,33 @@ public class AuthenticatingAPICalls {
             this.isBitmap = false;
             this.isFile = false;
             this.isUri = true;
+            this.type = type;
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             this.error = null;
-            this.outputList = new ArrayList<>();
             this.stringOutput1 = null;
             this.stringOutput2 = null;
+            if(this.type == null){
+                this.type = RequestedReturnType.COMPARE_PHOTOS;
+            }
         }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
+            if(progressBar != null){
+                try {
+                    progressBar.setProgress(values[0]);
+                } catch (Exception e){}
+            }
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected UploadPhotosObj doInBackground(Void... params) {
+            UploadPhotosObj uploadPhotosObj;
             //First check type:
             if(isString){
                 Pattern pattern = Pattern.compile(BASE_64_ENCODED_STRING_REGEX);
@@ -2091,7 +2023,7 @@ public class AuthenticatingAPICalls {
                 }
 
             } else if (isBitmap){
-                if(bitmap1 == null || bitmap2 == null){
+                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
                     error = buildErrorObject("One or both bitmaps were null");
                     return null;
                 }
@@ -2105,9 +2037,9 @@ public class AuthenticatingAPICalls {
                     return null;
                 }
 
-                bitmap1 = convertFileToBitmap(file1);
-                bitmap2 = convertFileToBitmap(file2);
-                if(bitmap1 == null || bitmap2 == null){
+                bitmap1OrIDFront = convertFileToBitmap(file1);
+                bitmap2OrIDBack = convertFileToBitmap(file2);
+                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
                     error = buildErrorObject("One or both of the files could not be converted to bitmaps");
                     return null;
                 }
@@ -2117,9 +2049,9 @@ public class AuthenticatingAPICalls {
                     error = buildErrorObject("One or both of the files passed were null");
                     return null;
                 }
-                bitmap1 = convertFileToBitmap(file1);
-                bitmap2 = convertFileToBitmap(file2);
-                if(bitmap1 == null || bitmap2 == null){
+                bitmap1OrIDFront = convertFileToBitmap(file1);
+                bitmap2OrIDBack = convertFileToBitmap(file2);
+                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
                     error = buildErrorObject("One or both of the files could not be converted to bitmaps");
                     return null;
                 }
@@ -2127,65 +2059,61 @@ public class AuthenticatingAPICalls {
             }
 
             try {
-                if(isBitmapTooLarge(bitmap1)){
-                    float toShrink = AuthenticatingAPICalls.getImageResizeFactor(bitmap1,
-                            AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                    bitmap1 = AuthenticatingAPICalls.resizePhoto(bitmap1, toShrink);
+                if(isBitmapTooLarge(bitmap1OrIDFront)){
+                    bitmap1OrIDFront = AuthenticatingAPICalls.resizePhoto(bitmap1OrIDFront);
                 }
-//                while(isBitmapTooLarge(bitmap1)){
-//                    bitmap1 = shrinkPhoto(bitmap1, 2);
-//                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap1 = shrinkPhoto(bitmap1, 8);
+                bitmap1OrIDFront = shrinkPhoto(bitmap1OrIDFront, 8);
             }
 
             try {
-                if(isBitmapTooLarge(bitmap2)){
-                    float toShrink = AuthenticatingAPICalls.getImageResizeFactor(bitmap2,
-                            AuthenticatingConstants.MAX_SIZE_IMAGE_UPLOAD);
-                    bitmap2 = AuthenticatingAPICalls.resizePhoto(bitmap2, toShrink);
+                if(isBitmapTooLarge(bitmap2OrIDBack)){
+                    bitmap2OrIDBack = AuthenticatingAPICalls.resizePhoto(bitmap2OrIDBack);
                 }
-//                while(isBitmapTooLarge(bitmap2)){
-//                    bitmap2 = shrinkPhoto(bitmap2, 2);
+//                while(isBitmapTooLarge(bitmap2OrIDBack)){
+//                    bitmap2OrIDBack = shrinkPhoto(bitmap2OrIDBack, 2);
 //                }
             } catch (OutOfMemoryError oom){
                 //File too large, resize to very small
-                bitmap2 = shrinkPhoto(bitmap2, 8);
+                bitmap2OrIDBack = shrinkPhoto(bitmap2OrIDBack, 8);
             }
-
-            resizedBitmap1 = bitmap1;
-            bitmap1.recycle();
-            resizedBitmap2 = bitmap2;
-            bitmap2.recycle();
-
             try {
-                stringOutput1 = encodeImage(resizedBitmap1);
-                stringOutput2 = encodeImage(resizedBitmap2);
+                stringOutput1 = encodeImage(bitmap1OrIDFront);
+                stringOutput2 = encodeImage(bitmap2OrIDBack);
             } catch (Exception e) {
                 error = buildErrorObject("Could not convert images to base64: " + e.getMessage());
                 return null;
             }
 
             if(isNullOrEmpty(stringOutput1) || isNullOrEmpty(stringOutput2)){
+                uploadPhotosObj = null;
                 error = buildErrorObject("Could not convert images to base64");
             } else {
-                outputList.add(stringOutput1);
-                outputList.add(stringOutput2);
+                uploadPhotosObj = new UploadPhotosObj();
+                switch (type){
+                    case UPLOAD_ID:
+                        uploadPhotosObj.setIdFront(stringOutput1);
+                        uploadPhotosObj.setIdBack(stringOutput2);
+                        break;
+
+                    case COMPARE_PHOTOS:
+                        uploadPhotosObj.setImg1(stringOutput1);
+                        uploadPhotosObj.setImg2(stringOutput2);
+                        break;
+                }
             }
-            return null;
+            bitmap1OrIDFront.recycle();
+            bitmap2OrIDBack.recycle();
+            return uploadPhotosObj;
         }
 
         @Override
-        protected void onPostExecute(Void args) {
+        protected void onPostExecute(UploadPhotosObj args) {
             if(error == null){
-                if(outputList != null){
-                    if(outputList.size() > 0){
-                        listener.onTaskComplete(outputList, AuthenticatingConstants.TAG_LIST_OF_STRINGS);
-                        return;
-                    } else {
-                        error = buildErrorObject("An unknown error has occurred");
-                    }
+                if(args != null){
+                    listener.onTaskComplete(args, AuthenticatingConstants.TAG_UPLOAD_PHOTO_OBJECT);
+                    return;
                 } else {
                     error = buildErrorObject("An unknown error has occurred");
                 }
