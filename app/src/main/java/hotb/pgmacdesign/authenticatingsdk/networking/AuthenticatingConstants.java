@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworksHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResultsHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.PhoneVerification;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObjectHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponseObj;
@@ -29,6 +30,7 @@ public class AuthenticatingConstants {
     public static final int TAG_USER_HEADER = 19004;
     public static final int TAG_QUIZ_QUESTIONS_HEADER = 19005;
     public static final int TAG_UPLOAD_PHOTO_OBJECT = 19006;
+    public static final int TAG_CHECK_PHOTO_RESULT_OBJECT = 19007;
 
 
 
@@ -54,6 +56,8 @@ public class AuthenticatingConstants {
     protected static final Type TYPE_VERIFY_QUIZ_OBJ = new TypeToken<VerifyQuizObj>() {
     }.getType();
     protected static final Type TYPE_QUIZ_QUESTIONS_HEADER = new TypeToken<QuizObjectHeader>() {
+    }.getType();
+    protected static final Type TYPE_CHECK_PHOTO_RESULTS_HEADER = new TypeToken<CheckPhotoResultsHeader>() {
     }.getType();
 
     //1 MB

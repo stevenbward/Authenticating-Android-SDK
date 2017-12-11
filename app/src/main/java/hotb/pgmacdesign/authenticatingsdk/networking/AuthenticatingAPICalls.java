@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import hotb.pgmacdesign.authenticatingsdk.datamodels.AuthenticatingException;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworksHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResultsHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.PhoneVerification;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObjectHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponseObj;
@@ -515,6 +516,39 @@ public class AuthenticatingAPICalls {
 
             toReturn = (SimpleResponseObj) response.body();
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
+    }
+
+    /**
+     * Check the current status of the asynchronous image processing on the server
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @return {@link CheckPhotoResultsHeader}
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static CheckPhotoResultsHeader checkUploadId(String companyAPIKey,
+                                                 String accessCode) throws AuthenticatingException {
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            throw buildMissingAuthKeyError();
+        }
+
+        UserHeader.User u = new UserHeader.User();
+        u.setAccessCode(accessCode);
+        Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
+        CheckPhotoResultsHeader toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            ErrorHandler.checkForAuthenticatingError(response);
+            toReturn = (CheckPhotoResultsHeader) response.body();
+            AuthenticatingAPICalls.printOutResponseJson(toReturn,
+                    AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -1305,6 +1339,57 @@ public class AuthenticatingAPICalls {
             public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            }
+        });
+    }
+
+
+    /**
+     * Check the current status of the asynchronous image processing on the server
+     *
+     * @param listener {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @return {@link CheckPhotoResultsHeader.CheckPhotoResults}
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static void checkUploadId(@NonNull final OnTaskCompleteListener listener,
+                                                                          String companyAPIKey,
+                                                                          String accessCode) {
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        UserHeader.User u = new UserHeader.User();
+        u.setAccessCode(accessCode);
+        Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
+        call.enqueue(new Callback<CheckPhotoResultsHeader>() {
+            @Override
+            public void onResponse(Call<CheckPhotoResultsHeader> call, Response<CheckPhotoResultsHeader> response) {
+                try {
+                    ErrorHandler.checkForAuthenticatingError(response);
+                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) response.body();
+                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
+                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT_OBJECT);
+                } catch (AuthenticatingException authE) {
+                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    AuthenticatingAPICalls.printOutResponseJson(authE,
+                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<CheckPhotoResultsHeader> call, Throwable t) {
+                t.printStackTrace();
+                listener.onTaskComplete(buildErrorObject(t.getMessage()),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
         });
     }

@@ -1,6 +1,7 @@
 package hotb.pgmacdesign.authenticatingsdk.networking;
 
 import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworksHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResultsHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.PhoneVerification;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObjectHeader;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponseObj;
@@ -170,6 +171,18 @@ public interface APIService {
     @POST(API + VERSION + "/uploadId")
     Call<SimpleResponseObj> uploadId(@Header("authKey") String authKey,
                                      @Body UploadPhotosObj uploadPhotosObj
+    );
+
+
+    /**
+     * Upload a front and back of an ID for identity proof verification
+     * @param authKey
+     * @param user Required field is accessCode
+     * @return {@link CheckPhotoResultsHeader}
+     */
+    @POST(API + VERSION + "/checkUploadId")
+    Call<CheckPhotoResultsHeader> checkUploadId(@Header("authKey") String authKey,
+                                                @Body UserHeader.User user
     );
 
 }
