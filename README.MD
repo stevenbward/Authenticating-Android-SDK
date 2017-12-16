@@ -26,7 +26,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.4'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.5'
         compile 'com.squareup.retrofit2:retrofit:2.3.0'
         compile 'com.squareup.okhttp3:okhttp:3.9.0'
         compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
