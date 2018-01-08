@@ -1770,10 +1770,10 @@ public class AuthenticatingAPICalls {
                     Logging.log("AuthenticatingException API Response: " + message);
                 } else {
                     try {
-                        Logging.log("AuthenticatingException API Response: " + new Gson().toJson(obj, type));
+                        Logging.log("Authenticating API Response: " + new Gson().toJson(obj, type));
                     } catch (Exception e) {
                         //e.printStackTrace();
-                        Logging.log("AuthenticatingException API Response: Response Received, but was not parseable: " + e.getMessage());
+                        Logging.log("Authenticating API Response: Response Received, but was not parseable: " + e.getMessage());
                     }
                 }
             }
