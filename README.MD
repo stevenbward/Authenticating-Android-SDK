@@ -1,5 +1,5 @@
 [![Platform](https://img.shields.io/badge/platform-android-green.svg)](http://developer.android.com/index.html)
-[![API](https://img.shields.io/badge/API-14%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=11)
+[![API](https://img.shields.io/badge/API-11%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=11)
 [![JitPack](https://jitpack.io/v/stevenbward/Authenticating-Android-SDK.svg)](https://jitpack.io/#stevenbward/Authenticating-Android-SDK)
 
 # Introduction
