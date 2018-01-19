@@ -1,3 +1,7 @@
+[![Platform](https://img.shields.io/badge/platform-android-green.svg)](http://developer.android.com/index.html)
+[![API](https://img.shields.io/badge/API-14%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=11)
+[![JitPack](https://jitpack.io/v/stevenbward/Authenticating-Android-SDK.svg)](https://jitpack.io/#stevenbward/Authenticating-Android-SDK)
+
 # Introduction
 Authenticating is a verification platform that helps verify individuals through a variety of tests; the SDK allows companies to develop costom applications that utilize these various tests. Currently we offer solutions for iOS and Android platforms via an SDK as well as an open Api.
 
@@ -26,7 +30,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.5'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.6'
         compile 'com.squareup.retrofit2:retrofit:2.3.0'
         compile 'com.squareup.okhttp3:okhttp:3.9.0'
         compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
@@ -123,3 +127,8 @@ If you choose to use the API Calls that use the OnTaskComplete listener, they wi
 * public static final int	TAG_USER_HEADER	19004
 
 * public static final int	TAG_QUIZ_QUESTIONS_HEADER	19005
+
+* public static final int	TAG_UPLOAD_PHOTO_OBJECT	19006
+
+* public static final int	TAG_CHECK_PHOTO_RESULT_OBJECT	19007
+
