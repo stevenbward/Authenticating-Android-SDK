@@ -44,6 +44,7 @@ import static hotb.pgmacdesign.authenticatingsdk.networking.StringUtilities.keep
 /**
  * Class that houses API calls. These can be used or not if you want to define your own web
  * calls using the interface {@link APIService}
+ * Link to web documentation: https://docs.authenticating.com
  * Created by pmacdowell on 2017-07-13.
  */
 public class AuthenticatingAPICalls {
@@ -78,7 +79,10 @@ public class AuthenticatingAPICalls {
             shouldResetService = true;
         }
         if (shouldResetService) {
-            RetrofitClient.Builder builder = new RetrofitClient.Builder(APIService.class, URL_BASE);
+//            RetrofitClient.Builder builder = new RetrofitClient.Builder(
+//                    APIService.class, AuthenticatingConstants.STAGING_URL);
+            RetrofitClient.Builder builder = new RetrofitClient.Builder(
+                  APIService.class, URL_BASE);
             if (WebCallsLogging.isJsonLogging()) {
                 Logging.m("Updating Logging to: True");
                 builder.setLogLevel(HttpLoggingInterceptor.Level.BODY);
@@ -134,7 +138,7 @@ public class AuthenticatingAPICalls {
 
     /**
      * Verify your social network. This should only be called after the user has successfully
-     * logged into one of the available social OAuth platforms (IE facebook) where you have obtained
+     * logged into one of the available social OAuth platforms (IE: facebook) where you have obtained
      * their accessToken and id.
      *
      * @param companyAPIKey          The company api key provided by Authenticating
@@ -716,7 +720,7 @@ public class AuthenticatingAPICalls {
      * @return {@link UserHeader}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static UserHeader updateUser(String companyAPIKey, String accessCode,
+    public static UserHeader updateUser(@NonNull String companyAPIKey, @NonNull String accessCode,
                                         @NonNull UserHeader.User user) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
@@ -740,29 +744,34 @@ public class AuthenticatingAPICalls {
     }
 
     /**
-     * Update the user object. Other than the usual accessCode, apikey, and clientId, other fields
-     * are optional
-     *
+     * Update a user
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @param firstName     First name of user (IE John)
-     * @param lastName      Last name of User (IE Smith)
-     * @param birthYear     Birth year of user (IE 1985 or 2001)
-     * @param birthMonth    Birth month of the user (IE 12 or 4)
-     * @param birthDay      Birth Day of the user (IE 1 or 31)
-     * @param address       Address of User (IE 123 Fake St)
-     * @param city          City of the User (IE Los Angeles)
-     * @param state         State Abbreviation of User (IE CA or NY)
-     * @param zipcode       5 digit zip code / postal code of user (IE 90210 or 20500)
+     * @param firstName     First name of user (IE: John)
+     * @param lastName      Last name of User (IE: Smith)
+     * @param birthYear     Birth year of user (IE: 1985 or 2001)
+     * @param birthMonth    Birth month of the user (IE: 12 or 4)
+     * @param birthDay      Birth Day of the user (IE: 1 or 31)
+     * @param address       Address of User (IE: 123 Fake St)
+     * @param city          City of the User (IE: Los Angeles)
+     * @param state         State Abbreviation of User (IE: CA or NY)
+     * @param zipcode       5 digit zip code / postal code of user (IE: 90210 or 20500)
+     * @param street        street, as used by Canadian users. (IE: Jones Ave)
+     * @param province      province, as used by Canadian users. (IE: ON)
+     * @param buildingNumber buildingNumber, as used by Canadian users. (IE: 137)
+     * @param email         Email (IE, email@email.com)
+     * @param phoneNumber   Phone number, numbers only (IE: 2138675309)
+     * @param ssn           Social Security Number, 9 digits (IE: 123456789)
      * @return {@link UserHeader}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static UserHeader updateUser(String companyAPIKey,
-                                        String accessCode, String firstName,
-                                        String lastName, Integer birthYear, Integer birthMonth,
-                                        Integer birthDay, String address, String city,
-                                        String state, String zipcode, String email,
-                                        String phoneNumber, String ssn) throws AuthenticatingException {
+    public static UserHeader updateUser(@NonNull String companyAPIKey,
+                                        @NonNull String accessCode, @Nullable String firstName,
+                                        @Nullable String lastName, @Nullable Integer birthYear, @Nullable Integer birthMonth,
+                                        @Nullable Integer birthDay, @Nullable String address, @Nullable String city,
+                                        @Nullable String state, @Nullable String zipcode, @Nullable String street,
+                                        @Nullable String province, @Nullable String buildingNumber, @Nullable String email,
+                                        @Nullable String phoneNumber, @Nullable String ssn) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
@@ -779,6 +788,12 @@ public class AuthenticatingAPICalls {
             user.setMonth(birthMonth);
         if (birthDay != null)
             user.setDay(birthDay);
+        if(!StringUtilities.isNullOrEmpty(province))
+            user.setProvince(province);
+        if(!StringUtilities.isNullOrEmpty(buildingNumber))
+            user.setBuildingNumber(buildingNumber);
+        if(!StringUtilities.isNullOrEmpty(street))
+            user.setStreet(street);
         if (!isNullOrEmpty(address))
             user.setAddress(address);
         if (!isNullOrEmpty(city))
@@ -794,6 +809,38 @@ public class AuthenticatingAPICalls {
         if (!isNullOrEmpty(keepNumbersOnly(phoneNumber)))
             user.setPhone(keepNumbersOnly(phoneNumber));
         return updateUser(companyAPIKey, accessCode, user);
+    }
+
+    /**
+     * Authenticate a Canada / China Profile (Non-USA)
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     */
+    public static SimpleResponseObj authenticateProfile(String companyAPIKey,
+                                           String accessCode) throws AuthenticatingException {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            throw buildMissingAuthKeyError();
+        }
+        UserHeader.User user = new UserHeader.User();
+        user.setAccessCode(accessCode);
+
+        Call<SimpleResponseObj> call = myService.authenticateProfile(companyAPIKey, user);
+        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
+        SimpleResponseObj toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            ErrorHandler.checkForAuthenticatingError(response);
+
+            toReturn = (SimpleResponseObj) response.body();
+            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -856,7 +903,7 @@ public class AuthenticatingAPICalls {
 
     /**
      * Verify your social network. This should only be called after the user has successfully
-     * logged into one of the available social OAuth platforms (IE facebook) where you have obtained
+     * logged into one of the available social OAuth platforms (IE: facebook) where you have obtained
      * their accessToken and id.
      *
      * @param listener               {@link OnTaskCompleteListener}
@@ -1622,7 +1669,7 @@ public class AuthenticatingAPICalls {
      * @param user          {@link hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader.User}
      */
     public static void updateUser(@NonNull final OnTaskCompleteListener listener,
-                                  String companyAPIKey, String accessCode,
+                                  @NonNull String companyAPIKey, @NonNull String accessCode,
                                   @NonNull UserHeader.User user) {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             listener.onTaskComplete(buildMissingAuthKeyError(),
@@ -1667,23 +1714,30 @@ public class AuthenticatingAPICalls {
      * @param listener      {@link OnTaskCompleteListener}
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @param firstName     First name of user (IE John)
-     * @param lastName      Last name of User (IE Smith)
-     * @param birthYear     Birth year of user (IE 1985 or 2001)
-     * @param birthMonth    Birth month of the user (IE 12 or 4)
-     * @param birthDay      Birth Day of the user (IE 1 or 31)
-     * @param address       Address of User (IE 123 Fake St)
-     * @param city          City of the User (IE Los Angeles)
-     * @param state         State Abbreviation of User (IE CA or NY)
-     * @param zipcode       5 digit zip code / postal code of user (IE 90210 or 20500)
+     * @param firstName     First name of user (IE: John)
+     * @param lastName      Last name of User (IE: Smith)
+     * @param birthYear     Birth year of user (IE: 1985 or 2001)
+     * @param birthMonth    Birth month of the user (IE: 12 or 4)
+     * @param birthDay      Birth Day of the user (IE: 1 or 31)
+     * @param address       Address of User (IE: 123 Fake St)
+     * @param city          City of the User (IE: Los Angeles)
+     * @param state         State Abbreviation of User (IE: CA or NY)
+     * @param zipcode       5 digit zip code / postal code of user (IE: 90210 or 20500)
+     * @param street        street, as used by Canadian users. (IE: Jones Ave)
+     * @param province      province, as used by Canadian users. (IE: ON) 
+     * @param buildingNumber buildingNumber, as used by Canadian users. (IE: 137)
+     * @param email         Email (IE, email@email.com)
+     * @param phoneNumber   Phone number, numbers only (IE: 2138675309)
+     * @param ssn           Social Security Number, 9 digits (IE: 123456789)
      */
     public static void updateUser(@NonNull final OnTaskCompleteListener listener,
-                                  String companyAPIKey,
-                                  String accessCode, String firstName,
-                                  String lastName, Integer birthYear, Integer birthMonth,
-                                  Integer birthDay, String address, String city,
-                                  String state, String zipcode, String email,
-                                  String phoneNumber, String ssn) {
+                                  @NonNull String companyAPIKey,
+                                  @NonNull String accessCode, @Nullable String firstName,
+                                  @Nullable String lastName, @Nullable Integer birthYear, @Nullable Integer birthMonth,
+                                  @Nullable Integer birthDay, @Nullable String address, @Nullable String city,
+                                  @Nullable String state, @Nullable String zipcode, @Nullable String street,
+                                  @Nullable String province, @Nullable String buildingNumber, @Nullable String email,
+                                  @Nullable String phoneNumber, @Nullable String ssn) {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             listener.onTaskComplete(buildMissingAuthKeyError(),
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1702,6 +1756,12 @@ public class AuthenticatingAPICalls {
             user.setMonth(birthMonth);
         if (birthDay != null)
             user.setDay(birthDay);
+        if(!StringUtilities.isNullOrEmpty(province))
+            user.setProvince(province);
+        if(!StringUtilities.isNullOrEmpty(buildingNumber))
+            user.setBuildingNumber(buildingNumber);
+        if(!StringUtilities.isNullOrEmpty(street))
+            user.setStreet(street);
         if (!isNullOrEmpty(address))
             user.setAddress(address);
         if (!isNullOrEmpty(city))
@@ -1717,6 +1777,59 @@ public class AuthenticatingAPICalls {
         if (!isNullOrEmpty(keepNumbersOnly(phoneNumber)))
             user.setPhone(keepNumbersOnly(phoneNumber));
         updateUser(listener, companyAPIKey, accessCode, user);
+    }
+
+    /**
+     * Authenticate a Canada / China Profile (Non-USA)
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     */
+    public static void authenticateProfile(@NonNull final OnTaskCompleteListener listener,
+                                           @NonNull String companyAPIKey,
+                                           @NonNull String accessCode) {
+
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+        UserHeader.User user = new UserHeader.User();
+        user.setAccessCode(accessCode);
+        Call<SimpleResponseObj> call = myService.authenticateProfile(companyAPIKey, user);
+        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
+        call.enqueue(new Callback<SimpleResponseObj>() {
+            @Override
+            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+                try {
+                    ErrorHandler.checkForAuthenticatingError(response);
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                    if (myObjectToReturn == null) {
+                        listener.onTaskComplete(buildGenericErrorObject(),
+                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    } else {
+                        listener.onTaskComplete(myObjectToReturn,
+                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    }
+
+                } catch (AuthenticatingException authE) {
+                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+                t.printStackTrace();
+                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            }
+        });
     }
 
     /////////////////////////

@@ -56,6 +56,45 @@ public class UserHeader extends TopLevelObj {
         private String zipcode;
         @SerializedName("ssn")
         private String ssn;
+        /**
+         * For Canadian Users
+         */
+        @SerializedName("buildingNumber")
+        private String buildingNumber;
+        /**
+         * For Canadian Users
+         */
+        @SerializedName("province")
+        private String province;
+        /**
+         * For Canadian Users
+         */
+        @SerializedName("street")
+        private String street;
+
+        public String getBuildingNumber() {
+            return buildingNumber;
+        }
+
+        public void setBuildingNumber(String buildingNumber) {
+            this.buildingNumber = buildingNumber;
+        }
+
+        public String getProvince() {
+            return province;
+        }
+
+        public void setProvince(String province) {
+            this.province = province;
+        }
+
+        public String getStreet() {
+            return street;
+        }
+
+        public void setStreet(String street) {
+            this.street = street;
+        }
 
         public String getCountry() {
             return country;
@@ -74,7 +113,7 @@ public class UserHeader extends TopLevelObj {
         }
 
         public Integer getYear() {
-            if(year == null){
+            if (year == null) {
                 year = 0;
             }
             return year;
@@ -85,7 +124,7 @@ public class UserHeader extends TopLevelObj {
         }
 
         public Integer getMonth() {
-            if(month == null){
+            if (month == null) {
                 month = 0;
             }
             return month;
@@ -96,7 +135,7 @@ public class UserHeader extends TopLevelObj {
         }
 
         public Integer getDay() {
-            if(day == null){
+            if (day == null) {
                 day = 0;
             }
             return day;
