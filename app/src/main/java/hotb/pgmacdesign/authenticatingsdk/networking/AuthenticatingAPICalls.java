@@ -857,41 +857,6 @@ public class AuthenticatingAPICalls {
         return updateUser(companyAPIKey, accessCode, user);
     }
 
-    /**
-     * Authenticate a Canada / China Profile (Non-USA)
-     *
-     * @param companyAPIKey The company api key provided by Authenticating
-     * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     */
-    public static SimpleResponseObj authenticateProfile(String companyAPIKey,
-                                           String accessCode) throws AuthenticatingException {
-
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            throw buildMissingAuthKeyError();
-        }
-        UserHeader.User user = new UserHeader.User();
-        user.setAccessCode(accessCode);
-
-        Call<SimpleResponseObj> call = myService.authenticateProfile(companyAPIKey, user);
-        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        SimpleResponseObj toReturn = null;
-        try {
-            Response response = call.execute();
-
-            //Check the Error first
-            Object object = response.body();
-            try {
-                ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
-            } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return toReturn;
-    }
-
     ///////////////////////////////////////////////////////////////
     //Asynchronous Calls - Do Not require Async or Error Handling//
     ///////////////////////////////////////////////////////////////
@@ -1853,63 +1818,6 @@ public class AuthenticatingAPICalls {
         if (!isNullOrEmpty(keepNumbersOnly(phoneNumber)))
             user.setPhone(keepNumbersOnly(phoneNumber));
         updateUser(listener, companyAPIKey, accessCode, user);
-    }
-
-    /**
-     * Authenticate a Canada / China Profile (Non-USA)
-     *
-     * @param listener      {@link OnTaskCompleteListener}
-     * @param companyAPIKey The company api key provided by Authenticating
-     * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     */
-    public static void authenticateProfile(@NonNull final OnTaskCompleteListener listener,
-                                           @NonNull String companyAPIKey,
-                                           @NonNull String accessCode) {
-
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            listener.onTaskComplete(buildMissingAuthKeyError(),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-        UserHeader.User user = new UserHeader.User();
-        user.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call = myService.authenticateProfile(companyAPIKey, user);
-        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
-            @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
-                try {
-                    Object object = response.body();
-                    try {
-                        ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
-                    } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    if (myObjectToReturn == null) {
-                        listener.onTaskComplete(buildGenericErrorObject(),
-                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    } else {
-                        listener.onTaskComplete(myObjectToReturn,
-                                AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-                    }
-
-                } catch (AuthenticatingException authE) {
-                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
-                t.printStackTrace();
-                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            }
-        });
     }
 
     /////////////////////////

@@ -196,20 +196,4 @@ public interface APIService {
                                                 @Body UserHeader.User user
     );
 
-
-    /**
-     * Authenticate a profile.
-     * This endpoint is only utilized by non-USA customers (IE, Canada / China)
-     * Note, that should missing fields be found (IE, missing province, street, etc), this will
-     * throw back an error and specify what is needed to be updated via updateUser.
-     * {@link APIService#updateUser(String, UserHeader.User)}
-     * @param authKey
-     * @param user Required field is accessCode
-     * @return {@link SimpleResponseObj}
-     */
-    @POST(API + VERSION + "/authenticateProfile")
-    Call<SimpleResponseObj> authenticateProfile(@Header("authKey") String authKey,
-                                                @Body UserHeader.User user
-    );
-
 }
