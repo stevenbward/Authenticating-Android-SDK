@@ -21,7 +21,9 @@ import okhttp3.MediaType;
 
 public class AuthenticatingConstants {
 
+    // TODO: 2018-03-30 change me
     public static final String BASE_URL = "https://api.authenticating.com/";
+
 
     public static final int TAG_SIMPLE_RESPONSE_OBJ = 19000;
     public static final int TAG_ERROR_RESPONSE = 19001;
@@ -60,12 +62,13 @@ public class AuthenticatingConstants {
     protected static final Type TYPE_CHECK_PHOTO_RESULTS_HEADER = new TypeToken<CheckPhotoResultsHeader>() {
     }.getType();
 
-    //1 MB
-    protected static final float MAX_SIZE_IMAGE_UPLOAD = 1000000;
+    //2 MB
+    protected static final float MAX_SIZE_IMAGE_UPLOAD = 2000000;
 
     //////////////////////////////////////
     //MediaTypes (For Multipart Uploads)//
     //////////////////////////////////////
+
     public static final MediaType MEDIA_TYPE_JSON = MediaType.parse("application/json; charset=utf-8");
     public static final MediaType MEDIA_TYPE_IMAGE = MediaType.parse("image/*");
     public static final MediaType MEDIA_TYPE_TEXT = MediaType.parse("text/plain");

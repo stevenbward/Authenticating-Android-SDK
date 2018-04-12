@@ -173,6 +173,19 @@ public interface APIService {
 
 
     /**
+     * Upload a front and back of an ID for identity proof verification (enhanced, see
+     * {https://docs.authenticating.com} docs for details)
+     * @param authKey
+     * @param uploadPhotosObj Required fields here are: accessCode and both idFront / idBack. Note that
+     *                        both of the images are baseEncoded64 strings.
+     * @return
+     */
+    @POST(API + VERSION + "/uploadIdEnhanced")
+    Call<SimpleResponseObj> uploadIdEnhanced(@Header("authKey") String authKey,
+                                     @Body UploadPhotosObj uploadPhotosObj
+    );
+
+    /**
      * Check the status of the uploadId endpoint background operation.
      * @param authKey
      * @param user Required field is accessCode

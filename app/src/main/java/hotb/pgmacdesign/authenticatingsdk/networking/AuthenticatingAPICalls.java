@@ -60,6 +60,10 @@ public class AuthenticatingAPICalls {
     private static APIService myService;
     private static AsyncTask<Void, Void, Void> uploadPhotosAsynctask;
 
+    private static enum UploadIdTypes {
+        uploadId, uploadIdEnhanced, comparePhotos
+    }
+
     public static APIService getMyService() {
         init();
         return myService;
@@ -126,8 +130,11 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
             toReturn = (AvailableNetworksHeader) response.body();
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_AVAILABLE_NETWORKS);
         } catch (IOException ioe) {
@@ -169,10 +176,14 @@ public class AuthenticatingAPICalls {
         try {
             Response response = call.execute();
 
-            //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
+            //Check the error first
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
 
-            toReturn = (SimpleResponseObj) response.body();
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -205,9 +216,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -241,9 +255,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -274,9 +291,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -292,40 +312,15 @@ public class AuthenticatingAPICalls {
      * @param companyAPIKey       The company api key provided by Authenticating
      * @param accessCode          The identifier String given to a user. Obtained when creating the user
      * @param base64EncodedImage1 First Photo File already converted to base64 encoded String
-     * @param base64EncodeImage2  Second Photo File already converted to base64 encoded String
+     * @param base64EncodedImage2  Second Photo File already converted to base64 encoded String
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
     public static SimpleResponseObj comparePhotos(String companyAPIKey, String accessCode,
                                                   String base64EncodedImage1,
-                                                  String base64EncodeImage2) throws AuthenticatingException {
+                                                  String base64EncodedImage2) throws AuthenticatingException {
 
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            return null;
-        }
-
-        if (StringUtilities.isNullOrEmpty(base64EncodedImage1) ||
-                StringUtilities.isNullOrEmpty(base64EncodeImage2)) {
-            return null;
-        }
-
-        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-        uploadPhotosObj.setAccessCode(accessCode);
-        uploadPhotosObj.setImg1(base64EncodedImage1);
-        uploadPhotosObj.setImg2(base64EncodeImage2);
-        Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
-        SimpleResponseObj toReturn = null;
-        try {
-            Response response = call.execute();
-
-            //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return toReturn;
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedImage1,
+                base64EncodedImage2, UploadIdTypes.comparePhotos);
     }
 
     /**
@@ -342,67 +337,8 @@ public class AuthenticatingAPICalls {
     public static SimpleResponseObj comparePhotos(String companyAPIKey, String accessCode,
                                                   Bitmap photo1Bitmap, Bitmap photo2Bitmap) throws AuthenticatingException {
 
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            return null;
-        }
-
-        if (photo1Bitmap == null || photo2Bitmap == null) {
-            return null;
-        }
-
-        if (photo1Bitmap.getRowBytes() <= 0 || photo1Bitmap.getHeight() <= 0 ||
-                photo2Bitmap.getRowBytes() <= 0 || photo2Bitmap.getHeight() <= 0) {
-            return null;
-        }
-
-
-        if (isBitmapTooLarge(photo1Bitmap)) {
-            try {
-                photo1Bitmap = AuthenticatingAPICalls.resizePhoto(photo1Bitmap);
-//                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
-//                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
-                //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (isBitmapTooLarge(photo2Bitmap)) {
-            try {
-                photo2Bitmap = AuthenticatingAPICalls.resizePhoto(photo2Bitmap);
-//                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
-//                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
-                //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-        uploadPhotosObj.setAccessCode(accessCode);
-        String base64Image1 = null, base64Image2 = null;
-        try {
-            base64Image1 = encodeImage(photo1Bitmap);
-            base64Image2 = encodeImage(photo2Bitmap);
-        } catch (Exception e) {
-            return null;
-        }
-
-        uploadPhotosObj.setImg1(base64Image1);
-        uploadPhotosObj.setImg2(base64Image2);
-        Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
-        SimpleResponseObj toReturn = null;
-        try {
-            Response response = call.execute();
-
-            //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return toReturn;
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, photo1Bitmap, 
+                photo2Bitmap, UploadIdTypes.comparePhotos);
     }
 
     /**
@@ -420,33 +356,8 @@ public class AuthenticatingAPICalls {
                                                   String base64EncodedIdFront,
                                                   String base64EncodeIdBack) throws AuthenticatingException {
 
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            return null;
-        }
-
-        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
-                StringUtilities.isNullOrEmpty(base64EncodeIdBack)) {
-            return null;
-        }
-
-        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-        uploadPhotosObj.setAccessCode(accessCode);
-        uploadPhotosObj.setIdFront(base64EncodedIdFront);
-        uploadPhotosObj.setIdBack(base64EncodeIdBack);
-        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
-        SimpleResponseObj toReturn = null;
-        try {
-            Response response = call.execute();
-
-            //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return toReturn;
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
+                base64EncodeIdBack, UploadIdTypes.uploadId);
     }
 
     /**
@@ -461,8 +372,107 @@ public class AuthenticatingAPICalls {
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
     public static SimpleResponseObj uploadId(String companyAPIKey, String accessCode,
-                                                  Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
+                                             Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
 
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
+                idBackBitmap, UploadIdTypes.uploadId);
+    }
+    
+    /**
+     * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @param base64EncodeIdBack  Second Photo File already converted to base64 encoded String
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadIdEnhanced(String companyAPIKey, String accessCode,
+                                             String base64EncodedIdFront,
+                                             String base64EncodeIdBack) throws AuthenticatingException {
+
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
+                base64EncodeIdBack, UploadIdTypes.uploadIdEnhanced);
+    }
+    
+
+    /**
+     * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @param idBackBitmap  Second Photo File to parse.
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadIdEnhanced(String companyAPIKey, String accessCode,
+                                             Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
+
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
+                idBackBitmap, UploadIdTypes.uploadIdEnhanced);
+    }
+    
+    private static SimpleResponseObj uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
+                                                       String base64EncodedIdFront, String base64EncodeIdBack,
+                                                       final UploadIdTypes type) throws AuthenticatingException{
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            return null;
+        }
+
+        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
+                StringUtilities.isNullOrEmpty(base64EncodeIdBack)) {
+            return null;
+        }
+
+        Call<SimpleResponseObj> call;
+        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
+        uploadPhotosObj.setAccessCode(accessCode);
+        switch (type){
+
+            case uploadIdEnhanced:
+                uploadPhotosObj.setIdFront(base64EncodedIdFront);
+                uploadPhotosObj.setIdBack(base64EncodeIdBack);
+                call = myService.uploadIdEnhanced(companyAPIKey, uploadPhotosObj);
+                break;
+
+            case uploadId:
+                uploadPhotosObj.setIdFront(base64EncodedIdFront);
+                uploadPhotosObj.setIdBack(base64EncodeIdBack);
+                call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+                break;
+
+            default:
+            case comparePhotos:
+                uploadPhotosObj.setImg1(base64EncodedIdFront);
+                uploadPhotosObj.setImg2(base64EncodeIdBack);
+                call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+                break;
+        }
+        SimpleResponseObj toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
+            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
+    }
+
+    private static SimpleResponseObj uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
+                                                       Bitmap idFrontBitmap, Bitmap idBackBitmap,
+                                                       final UploadIdTypes type) throws AuthenticatingException{
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             return null;
         }
@@ -480,9 +490,6 @@ public class AuthenticatingAPICalls {
         if (isBitmapTooLarge(idFrontBitmap)) {
             try {
                 idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap);
-//                photo1Bitmap = Bitmap.createScaledBitmap(photo1Bitmap,
-//                        (photo1Bitmap.getWidth() / 8), (photo1Bitmap.getHeight() / 8), true);
-                //int size = (photo1Bitmap.getRowBytes() * photo1Bitmap.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -490,9 +497,6 @@ public class AuthenticatingAPICalls {
         if (isBitmapTooLarge(idBackBitmap)) {
             try {
                 idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap);
-//                photo2Bitmap = Bitmap.createScaledBitmap(photo2Bitmap,
-//                        (photo2Bitmap.getWidth() / 8), (photo2Bitmap.getHeight() / 8), true);
-                //int size = (photo2Bitmap.getRowBytes() * photo2Bitmap.getHeight());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -508,17 +512,40 @@ public class AuthenticatingAPICalls {
             return null;
         }
 
-        uploadPhotosObj.setIdFront(idFront);
-        uploadPhotosObj.setIdBack(idBack);
-        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+        Call<SimpleResponseObj> call;
+
+        switch (type){
+            case uploadId:
+                uploadPhotosObj.setIdFront(idFront);
+                uploadPhotosObj.setIdBack(idBack);
+                call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+
+                break;
+            case uploadIdEnhanced:
+                uploadPhotosObj.setIdFront(idFront);
+                uploadPhotosObj.setIdBack(idBack);
+                call = myService.uploadIdEnhanced(companyAPIKey, uploadPhotosObj);
+                break;
+
+            case comparePhotos:
+            default:
+                uploadPhotosObj.setImg1(idFront);
+                uploadPhotosObj.setImg2(idBack);
+                call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+                break;
+        }
+
         SimpleResponseObj toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -549,8 +576,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-            toReturn = (CheckPhotoResultsHeader) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (CheckPhotoResultsHeader) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn,
                     AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
         } catch (IOException ioe) {
@@ -582,9 +613,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (QuizObjectHeader) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (QuizObjectHeader) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_QUIZ_QUESTIONS_HEADER);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -631,9 +665,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -667,9 +704,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -701,9 +741,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (UserHeader) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (UserHeader) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_USER_HEADER);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -733,9 +776,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (UserHeader) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (UserHeader) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_USER_HEADER);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -833,9 +879,12 @@ public class AuthenticatingAPICalls {
             Response response = call.execute();
 
             //Check the Error first
-            ErrorHandler.checkForAuthenticatingError(response);
-
-            toReturn = (SimpleResponseObj) response.body();
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (SimpleResponseObj) object;
             AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -878,8 +927,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<AvailableNetworksHeader> call, Response<AvailableNetworksHeader> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    AvailableNetworksHeader myObjectToReturn = (AvailableNetworksHeader) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    AvailableNetworksHeader myObjectToReturn = (AvailableNetworksHeader) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_AVAILABLE_NETWORKS);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_AVAILABLE_NETWORKS);
 
@@ -936,8 +989,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -985,8 +1042,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1035,8 +1096,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1082,8 +1147,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1119,73 +1188,8 @@ public class AuthenticatingAPICalls {
     public static void comparePhotos(@NonNull final OnTaskCompleteListener listener,
                                      final String companyAPIKey, final String accessCode,
                                      final Bitmap photo1Bitmap, final Bitmap photo2Bitmap) {
-
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            listener.onTaskComplete(buildMissingAuthKeyError(),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-
-        if (photo1Bitmap == null || photo2Bitmap == null) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-
-        if (photo1Bitmap.getRowBytes() <= 0 || photo1Bitmap.getHeight() <= 0 ||
-                photo2Bitmap.getRowBytes() <= 0 || photo2Bitmap.getHeight() <= 0) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-
-        ConvertPhotosAsync async = new ConvertPhotosAsync(null, new OnTaskCompleteListener() {
-            @Override
-            public void onTaskComplete(Object result, int customTag) {
-                if(customTag == AuthenticatingConstants.TAG_UPLOAD_PHOTO_OBJECT) {
-                    UploadPhotosObj uploadPhotosObj = (UploadPhotosObj) result;
-                    if (uploadPhotosObj == null) {
-                        listener.onTaskComplete(buildErrorObject("Could not convert images"),
-                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    } else {
-                        uploadPhotosObj.setAccessCode(accessCode);
-                        Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
-                        call.enqueue(new Callback<SimpleResponseObj>() {
-                            @Override
-                            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
-                                try {
-                                    ErrorHandler.checkForAuthenticatingError(response);
-                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
-                                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-
-                                } catch (AuthenticatingException authE) {
-                                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
-                                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
-                                t.printStackTrace();
-                                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                            }
-                        });
-                    }
-                } else if (customTag == AuthenticatingConstants.TAG_ERROR_RESPONSE){
-                    listener.onTaskComplete(((AuthenticatingException)result),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                } else {
-                    listener.onTaskComplete(buildErrorObject("Could not convert images"),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                }
-            }
-        }, photo1Bitmap, photo2Bitmap, ConvertPhotosAsync.RequestedReturnType.COMPARE_PHOTOS);
-        async.execute();
+        AuthenticatingAPICalls.uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode,
+                photo1Bitmap, photo2Bitmap, UploadIdTypes.comparePhotos);
     }
 
     /**
@@ -1197,20 +1201,98 @@ public class AuthenticatingAPICalls {
      * @param companyAPIKey       The company api key provided by Authenticating
      * @param accessCode          The identifier String given to a user. Obtained when creating the user
      * @param base64EncodedImage1 First Photo File already converted to base64 encoded String
-     * @param base64EncodeImage2  Second Photo File already converted to base64 encoded String
+     * @param base64EncodedImage2  Second Photo File already converted to base64 encoded String
      */
     public static void comparePhotos(@NonNull final OnTaskCompleteListener listener,
                                      String companyAPIKey, String accessCode,
-                                     String base64EncodedImage1, String base64EncodeImage2) {
+                                     String base64EncodedImage1, String base64EncodedImage2) {
+        AuthenticatingAPICalls.uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode,
+                base64EncodedImage1, base64EncodedImage2, UploadIdTypes.comparePhotos);
+    }
 
+    /**
+     * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
+     * This method will run all bitmap conversion and base64 string encoding on a thread and
+     * not impact the main UI thread.
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @param idBackBitmap  Second Photo File to parse.
+     */
+    public static void uploadIdEnhanced(@NonNull final OnTaskCompleteListener listener,
+                                final String companyAPIKey, final String accessCode,
+                                final Bitmap idFrontBitmap, final Bitmap idBackBitmap) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, idFrontBitmap,
+                idBackBitmap, UploadIdTypes.uploadIdEnhanced);
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param listener            {@link OnTaskCompleteListener}
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @param base64EncodedIdBack  Second Photo File already converted to base64 encoded String
+     */
+    public static void uploadIdEnhanced(@NonNull final OnTaskCompleteListener listener,
+                                String companyAPIKey, String accessCode,
+                                String base64EncodedIdFront, String base64EncodedIdBack) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, base64EncodedIdFront,
+                base64EncodedIdBack, UploadIdTypes.uploadIdEnhanced);
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification. This method will run all bitmap conversion
+     * and base64 string encoding on a thread and not impact the main UI thread.
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @param idBackBitmap  Second Photo File to parse.
+     */
+    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
+                                     final String companyAPIKey, final String accessCode,
+                                     final Bitmap idFrontBitmap, final Bitmap idBackBitmap) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, idFrontBitmap,
+                idBackBitmap, UploadIdTypes.uploadId);
+    }
+
+    /**
+     * Upload 2 photos to the endpoint for uploadId and identify verification.
+     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     *
+     * @param listener            {@link OnTaskCompleteListener}
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @param base64EncodedIdBack  Second Photo File already converted to base64 encoded String
+     */
+    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
+                                     String companyAPIKey, String accessCode,
+                                     String base64EncodedIdFront, String base64EncodedIdBack) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, base64EncodedIdFront,
+                base64EncodedIdBack, UploadIdTypes.uploadId);
+    }
+
+    private static void uploadIdEndpointsJoiner(@NonNull final OnTaskCompleteListener listener,
+                                          final String companyAPIKey, final String accessCode,
+                                          String base64EncodedIdFront, String base64EncodedIdBack,
+                                          UploadIdTypes type){
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             listener.onTaskComplete(buildMissingAuthKeyError(),
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
 
-        if (StringUtilities.isNullOrEmpty(base64EncodedImage1) ||
-                StringUtilities.isNullOrEmpty(base64EncodeImage2)) {
+        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
+                StringUtilities.isNullOrEmpty(base64EncodedIdBack)) {
             listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
@@ -1218,15 +1300,38 @@ public class AuthenticatingAPICalls {
 
         UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
         uploadPhotosObj.setAccessCode(accessCode);
-        uploadPhotosObj.setImg1(base64EncodedImage1);
-        uploadPhotosObj.setImg2(base64EncodeImage2);
-        Call<SimpleResponseObj> call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+        Call<SimpleResponseObj> call;
+        switch (type){
+
+            case uploadId:
+                uploadPhotosObj.setIdFront(base64EncodedIdFront);
+                uploadPhotosObj.setIdBack(base64EncodedIdBack);
+                call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+                break;
+
+            case uploadIdEnhanced:
+                uploadPhotosObj.setIdFront(base64EncodedIdFront);
+                uploadPhotosObj.setIdBack(base64EncodedIdBack);
+                call = myService.uploadIdEnhanced(companyAPIKey, uploadPhotosObj);
+                break;
+
+            default:
+            case comparePhotos:
+                uploadPhotosObj.setImg1(base64EncodedIdFront);
+                uploadPhotosObj.setImg2(base64EncodedIdBack);
+                call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+                break;
+        }
         call.enqueue(new Callback<SimpleResponseObj>() {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1248,20 +1353,10 @@ public class AuthenticatingAPICalls {
         });
     }
 
-    /**
-     * Upload 2 photos to the endpoint for uploadId and identify verification. This method will run all bitmap conversion
-     * and base64 string encoding on a thread and not impact the main UI thread.
-     *
-     * @param listener      {@link OnTaskCompleteListener}
-     * @param companyAPIKey The company api key provided by Authenticating
-     * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @param idFrontBitmap  First Photo File to parse.
-     * @param idBackBitmap  Second Photo File to parse.
-     */
-    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
-                                     final String companyAPIKey, final String accessCode,
-                                     final Bitmap idFrontBitmap, final Bitmap idBackBitmap) {
-
+    private static void uploadIdEndpointsJoiner(@NonNull final OnTaskCompleteListener listener,
+                                          final String companyAPIKey, final String accessCode,
+                                          final Bitmap idFrontBitmap, final Bitmap idBackBitmap,
+                                          final UploadIdTypes type){
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             listener.onTaskComplete(buildMissingAuthKeyError(),
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1291,13 +1386,31 @@ public class AuthenticatingAPICalls {
                                 AuthenticatingConstants.TAG_ERROR_RESPONSE);
                     } else {
                         uploadPhotosObj.setAccessCode(accessCode);
-                        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+                        Call<SimpleResponseObj> call;
+                        switch (type){
+                            case uploadId:
+                                call = myService.uploadId(companyAPIKey, uploadPhotosObj);
+                                break;
+
+                            case uploadIdEnhanced:
+                                call = myService.uploadIdEnhanced(companyAPIKey, uploadPhotosObj);
+                                break;
+                                
+                            case comparePhotos:
+                            default:
+                                call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
+                                break;
+                        }
                         call.enqueue(new Callback<SimpleResponseObj>() {
                             @Override
                             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                                 try {
-                                    ErrorHandler.checkForAuthenticatingError(response);
-                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                                    Object object = response.body();
+                                    try {
+                                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                                    } catch (NullPointerException nope){}
+                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1326,70 +1439,9 @@ public class AuthenticatingAPICalls {
                             AuthenticatingConstants.TAG_ERROR_RESPONSE);
                 }
             }
-        }, idFrontBitmap, idBackBitmap, ConvertPhotosAsync.RequestedReturnType.UPLOAD_ID);
+        }, idFrontBitmap, idBackBitmap, type);
         async.execute();
     }
-
-    /**
-     * Upload 2 photos to the endpoint for uploadId and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
-     *
-     * @param listener            {@link OnTaskCompleteListener}
-     * @param companyAPIKey       The company api key provided by Authenticating
-     * @param accessCode          The identifier String given to a user. Obtained when creating the user
-     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
-     * @param base64EncodedIdBack  Second Photo File already converted to base64 encoded String
-     */
-    public static void uploadId(@NonNull final OnTaskCompleteListener listener,
-                                     String companyAPIKey, String accessCode,
-                                     String base64EncodedIdFront, String base64EncodedIdBack) {
-
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            listener.onTaskComplete(buildMissingAuthKeyError(),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-
-        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
-                StringUtilities.isNullOrEmpty(base64EncodedIdBack)) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-
-        UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
-        uploadPhotosObj.setAccessCode(accessCode);
-        uploadPhotosObj.setIdFront(base64EncodedIdFront);
-        uploadPhotosObj.setIdBack(base64EncodedIdBack);
-        Call<SimpleResponseObj> call = myService.uploadId(companyAPIKey, uploadPhotosObj);
-        call.enqueue(new Callback<SimpleResponseObj>() {
-            @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
-                try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-
-                } catch (AuthenticatingException authE) {
-                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
-                t.printStackTrace();
-                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            }
-        });
-    }
-
 
     /**
      * Check the current status of the asynchronous image processing on the server
@@ -1417,8 +1469,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<CheckPhotoResultsHeader> call, Response<CheckPhotoResultsHeader> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT_OBJECT);
                 } catch (AuthenticatingException authE) {
@@ -1470,8 +1526,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<QuizObjectHeader> call, Response<QuizObjectHeader> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    QuizObjectHeader myObjectToReturn = (QuizObjectHeader) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    QuizObjectHeader myObjectToReturn = (QuizObjectHeader) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_QUIZ_QUESTIONS_HEADER);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_QUIZ_QUESTIONS_HEADER);
 
@@ -1533,8 +1593,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1583,8 +1647,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
 
@@ -1631,8 +1699,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<UserHeader> call, Response<UserHeader> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    UserHeader myObjectToReturn = (UserHeader) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    UserHeader myObjectToReturn = (UserHeader) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER_HEADER);
                     if (myObjectToReturn == null) {
                         listener.onTaskComplete(buildGenericErrorObject(),
@@ -1683,8 +1755,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<UserHeader> call, Response<UserHeader> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    UserHeader myObjectToReturn = (UserHeader) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    UserHeader myObjectToReturn = (UserHeader) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER_HEADER);
                     listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_USER_HEADER);
 
@@ -1803,8 +1879,12 @@ public class AuthenticatingAPICalls {
             @Override
             public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
                 try {
-                    ErrorHandler.checkForAuthenticatingError(response);
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) response.body();
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
                     AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
                     if (myObjectToReturn == null) {
                         listener.onTaskComplete(buildGenericErrorObject(),
@@ -1879,7 +1959,10 @@ public class AuthenticatingAPICalls {
             if (WebCallsLogging.isJsonLogging()) {
                 if (type == AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR) {
                     AuthenticatingException authE = (AuthenticatingException) obj;
-                    String message = authE.getMessage();
+                    String message = authE.getAuthErrorString();
+                    if(StringUtilities.isNullOrEmpty(message)){
+                        message = authE.getAuthErrorStringDetails();
+                    }
                     Logging.log("AuthenticatingException API Response: " + message);
                 } else {
                     try {
@@ -2097,10 +2180,6 @@ public class AuthenticatingAPICalls {
      */
     protected static class ConvertPhotosAsync extends AsyncTask<Void, Integer, UploadPhotosObj> {
 
-        static enum RequestedReturnType {
-            UPLOAD_ID, COMPARE_PHOTOS
-        }
-
         //Input variables
         private String base64EncodedImage1, base64EncodedImage2;
         private Bitmap bitmap1OrIDFront, bitmap2OrIDBack;
@@ -2112,7 +2191,7 @@ public class AuthenticatingAPICalls {
         private OnTaskCompleteListener listener;
         private Bitmap resizedBitmap1, resizedBitmap2;
         private boolean isString, isBitmap, isFile, isUri;
-        private RequestedReturnType type;
+        private AuthenticatingAPICalls.UploadIdTypes type;
 
         //Output variables
         private String stringOutput1, stringOutput2;
@@ -2123,7 +2202,7 @@ public class AuthenticatingAPICalls {
         private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
                                    @NonNull OnTaskCompleteListener listener,
                                    @NonNull String base64EncodedImage1, @NonNull String base64EncodedImage2,
-                                   @NonNull RequestedReturnType type) {
+                                   @NonNull AuthenticatingAPICalls.UploadIdTypes type) {
             this.base64EncodedImage1 = base64EncodedImage1;
             this.base64EncodedImage2 = base64EncodedImage2;
             this.progressBar = progressBar;
@@ -2138,7 +2217,7 @@ public class AuthenticatingAPICalls {
         private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
                                    @NonNull OnTaskCompleteListener listener,
                                    @NonNull Bitmap bitmap1OrIDFront, @NonNull Bitmap bitmap2OrIDBack,
-                                   @NonNull RequestedReturnType type) {
+                                   @NonNull AuthenticatingAPICalls.UploadIdTypes type) {
             this.bitmap1OrIDFront = bitmap1OrIDFront;
             this.bitmap2OrIDBack = bitmap2OrIDBack;
             this.progressBar = progressBar;
@@ -2153,7 +2232,7 @@ public class AuthenticatingAPICalls {
         private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
                                    @NonNull OnTaskCompleteListener listener,
                                    @NonNull File imageFile1, @NonNull File imageFile2,
-                                   @NonNull RequestedReturnType type) {
+                                   @NonNull AuthenticatingAPICalls.UploadIdTypes type) {
             this.file1 = imageFile1;
             this.file2 = imageFile2;
             this.progressBar = progressBar;
@@ -2168,7 +2247,7 @@ public class AuthenticatingAPICalls {
         private ConvertPhotosAsync(@Nullable ProgressBar progressBar,
                                    @NonNull OnTaskCompleteListener listener,
                                    @NonNull Uri imageUri1, @NonNull Uri imageUri2,
-                                   @NonNull RequestedReturnType type) {
+                                   @NonNull AuthenticatingAPICalls.UploadIdTypes type) {
             this.uri1 = imageUri1;
             this.uri2 = imageUri2;
             this.progressBar = progressBar;
@@ -2187,7 +2266,7 @@ public class AuthenticatingAPICalls {
             this.stringOutput1 = null;
             this.stringOutput2 = null;
             if(this.type == null){
-                this.type = RequestedReturnType.COMPARE_PHOTOS;
+                this.type = UploadIdTypes.comparePhotos;
             }
         }
 
@@ -2290,12 +2369,13 @@ public class AuthenticatingAPICalls {
             } else {
                 uploadPhotosObj = new UploadPhotosObj();
                 switch (type){
-                    case UPLOAD_ID:
+                    case uploadIdEnhanced:
+                    case uploadId:
                         uploadPhotosObj.setIdFront(stringOutput1);
                         uploadPhotosObj.setIdBack(stringOutput2);
                         break;
 
-                    case COMPARE_PHOTOS:
+                    case comparePhotos:
                         uploadPhotosObj.setImg1(stringOutput1);
                         uploadPhotosObj.setImg2(stringOutput2);
                         break;
