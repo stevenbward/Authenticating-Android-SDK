@@ -3,7 +3,7 @@
 buildscript {
     repositories {
         jcenter()
-        google()
+        //google()
     }
     allprojects {
         repositories {
