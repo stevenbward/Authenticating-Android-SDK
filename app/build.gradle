@@ -52,3 +52,6 @@ dependencies {
     compile 'com.squareup.okio:okio:1.13.0'
     testCompile 'junit:junit:4.12'
 }
+repositories {
+    mavenCentral()
+}
