@@ -1,6 +1,7 @@
 [![Platform](https://img.shields.io/badge/platform-android-green.svg)](http://developer.android.com/index.html)
 [![API](https://img.shields.io/badge/API-11%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=11)
 [![JitPack](https://jitpack.io/v/stevenbward/Authenticating-Android-SDK.svg)](https://jitpack.io/#stevenbward/Authenticating-Android-SDK)
+[![Build Status](https://travis-ci.org/stevenbward/Authenticating-Android-SDK.svg?branch=master)](https://travis-ci.org/stevenbward/Authenticating-Android-SDK)
 
 # Introduction
 Authenticating is a verification platform that helps verify individuals through a variety of tests; the SDK allows companies to develop costom applications that utilize these various tests. Currently we offer solutions for iOS and Android platforms via an SDK as well as an open Api.
