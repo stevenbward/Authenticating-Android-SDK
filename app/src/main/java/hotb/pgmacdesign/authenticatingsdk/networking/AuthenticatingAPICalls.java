@@ -61,7 +61,7 @@ public class AuthenticatingAPICalls {
     private static AsyncTask<Void, Void, Void> uploadPhotosAsynctask;
 
     private static enum UploadIdTypes {
-        uploadId, uploadIdEnhanced, comparePhotos
+        uploadId, uploadIdEnhanced, comparePhotos, uploadPassport
     }
 
     public static APIService getMyService() {
@@ -306,7 +306,7 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for Photo proof.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
      * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param companyAPIKey       The company api key provided by Authenticating
@@ -325,7 +325,7 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for Photo proof.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
      * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param companyAPIKey The company api key provided by Authenticating
@@ -343,8 +343,8 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for uploadId and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadId(OnTaskCompleteListener, String, String, String, String)}
      *
      * @param companyAPIKey       The company api key provided by Authenticating
      * @param accessCode          The identifier String given to a user. Obtained when creating the user
@@ -362,8 +362,8 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for uploadId and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadId(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
@@ -377,11 +377,47 @@ public class AuthenticatingAPICalls {
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
                 idBackBitmap, UploadIdTypes.uploadId);
     }
+
+    /**
+     * Upload a picture of a passport for the verification process. Note that only the front (The
+     * portion with the data, usually on the first or second page) is required. 
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadPassport(OnTaskCompleteListener, String, String, String)}
+     *
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadPassport(String companyAPIKey, String accessCode,
+                                             String base64EncodedIdFront) throws AuthenticatingException {
+
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
+                null, UploadIdTypes.uploadPassport);
+    }
+
+    /**
+     * Upload a picture of a passport for the verification process. Note that only the front (The
+     * portion with the data, usually on the first or second page) is required. 
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadPassport(OnTaskCompleteListener, String, String, Bitmap)}
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static SimpleResponseObj uploadPassport(String companyAPIKey, String accessCode,
+                                             Bitmap idFrontBitmap) throws AuthenticatingException {
+
+        return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
+                null, UploadIdTypes.uploadPassport);
+    }
     
     /**
      * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadIdEnhanced(OnTaskCompleteListener, String, String, String, String)}
      *
      * @param companyAPIKey       The company api key provided by Authenticating
      * @param accessCode          The identifier String given to a user. Obtained when creating the user
@@ -397,11 +433,10 @@ public class AuthenticatingAPICalls {
                 base64EncodeIdBack, UploadIdTypes.uploadIdEnhanced);
     }
     
-
     /**
      * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadIdEnhanced(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
@@ -477,28 +512,49 @@ public class AuthenticatingAPICalls {
             return null;
         }
 
-        if (idFrontBitmap == null || idBackBitmap == null) {
-            return null;
-        }
-
-        if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
-                idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
-            return null;
-        }
-
-
-        if (isBitmapTooLarge(idFrontBitmap)) {
-            try {
-                idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap);
-            } catch (Exception e) {
-                e.printStackTrace();
+        if(type == UploadIdTypes.uploadPassport){
+            if (idFrontBitmap == null) {
+                return null;
+            }
+        } else {
+            if (idFrontBitmap == null || idBackBitmap == null) {
+                return null;
             }
         }
-        if (isBitmapTooLarge(idBackBitmap)) {
-            try {
-                idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap);
-            } catch (Exception e) {
-                e.printStackTrace();
+
+        if(type == UploadIdTypes.uploadPassport){
+            if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0) {
+                return null;
+            }
+        } else {
+            if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
+                    idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
+                return null;
+            }
+        }
+
+        if(type == UploadIdTypes.uploadPassport){
+            if (isBitmapTooLarge(idFrontBitmap)) {
+                try {
+                    idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            if (isBitmapTooLarge(idFrontBitmap)) {
+                try {
+                    idFrontBitmap = AuthenticatingAPICalls.resizePhoto(idFrontBitmap);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (isBitmapTooLarge(idBackBitmap)) {
+                try {
+                    idBackBitmap = AuthenticatingAPICalls.resizePhoto(idBackBitmap);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -506,8 +562,12 @@ public class AuthenticatingAPICalls {
         uploadPhotosObj.setAccessCode(accessCode);
         String idFront = null, idBack = null;
         try {
-            idFront = encodeImage(idFrontBitmap);
-            idBack = encodeImage(idBackBitmap);
+            if(type == UploadIdTypes.uploadPassport){
+                idFront = encodeImage(idFrontBitmap);
+            } else {
+                idFront = encodeImage(idFrontBitmap);
+                idBack = encodeImage(idBackBitmap);   
+            }
         } catch (Exception e) {
             return null;
         }
@@ -515,6 +575,11 @@ public class AuthenticatingAPICalls {
         Call<SimpleResponseObj> call;
 
         switch (type){
+            case uploadPassport:
+                uploadPhotosObj.setIdFront(idFront);
+                call = myService.uploadPassport(companyAPIKey, uploadPhotosObj);
+                break;
+                
             case uploadId:
                 uploadPhotosObj.setIdFront(idFront);
                 uploadPhotosObj.setIdBack(idBack);
@@ -570,6 +635,43 @@ public class AuthenticatingAPICalls {
         UserHeader.User u = new UserHeader.User();
         u.setAccessCode(accessCode);
         Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
+        CheckPhotoResultsHeader toReturn = null;
+        try {
+            Response response = call.execute();
+
+            //Check the Error first
+            Object object = response.body();
+            try {
+                ErrorHandler.checkForAuthenticatingErrorObject(object);
+                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+            } catch (NullPointerException nope){}
+            toReturn = (CheckPhotoResultsHeader) object;
+            AuthenticatingAPICalls.printOutResponseJson(toReturn,
+                    AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return toReturn;
+    }
+
+    /**
+     * Check the current status of the asynchronous image processing on the server
+     *
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @return {@link CheckPhotoResultsHeader}
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static CheckPhotoResultsHeader checkUploadPassport(String companyAPIKey,
+                                                        String accessCode) throws AuthenticatingException {
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            throw buildMissingAuthKeyError();
+        }
+
+        UserHeader.User u = new UserHeader.User();
+        u.setAccessCode(accessCode);
+        Call<CheckPhotoResultsHeader> call = myService.checkUploadPassport(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
         CheckPhotoResultsHeader toReturn = null;
         try {
@@ -1159,7 +1261,7 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for Photo proof.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
      * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param listener            {@link OnTaskCompleteListener}
@@ -1195,8 +1297,8 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for uploadIdEnhanced and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadIdEnhanced(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param listener            {@link OnTaskCompleteListener}
      * @param companyAPIKey       The company api key provided by Authenticating
@@ -1230,8 +1332,8 @@ public class AuthenticatingAPICalls {
 
     /**
      * Upload 2 photos to the endpoint for uploadId and identify verification.
-     * I recommend using the other asynchronous method for this one due to the possibility of more errors
-     * {@link AuthenticatingAPICalls#comparePhotos(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadId(OnTaskCompleteListener, String, String, Bitmap, Bitmap)}
      *
      * @param listener            {@link OnTaskCompleteListener}
      * @param companyAPIKey       The company api key provided by Authenticating
@@ -1245,6 +1347,41 @@ public class AuthenticatingAPICalls {
         uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, base64EncodedIdFront,
                 base64EncodedIdBack, UploadIdTypes.uploadId);
     }
+    
+    /**
+     * Upload a picture of a passport for the verification process. Note that only the front (The
+     * portion with the data, usually on the first or second page) is required. This method will run all bitmap conversion
+     * and base64 string encoding on a thread and not impact the main UI thread.
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param idFrontBitmap  First Photo File to parse.
+     */
+    public static void uploadPassport(@NonNull final OnTaskCompleteListener listener,
+                                final String companyAPIKey, final String accessCode,
+                                final Bitmap idFrontBitmap) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, idFrontBitmap,
+                null, UploadIdTypes.uploadPassport);
+    }
+
+    /**
+     * Upload a picture of a passport for the verification process. Note that only the front (The
+     * portion with the data, usually on the first or second page) is required.
+     * I recommend using the other asynchronous method over this one due to the possibility of more errors
+     * {@link AuthenticatingAPICalls#uploadPassport(OnTaskCompleteListener, String, String, String)}
+     *
+     * @param listener            {@link OnTaskCompleteListener}
+     * @param companyAPIKey       The company api key provided by Authenticating
+     * @param accessCode          The identifier String given to a user. Obtained when creating the user
+     * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
+     */
+    public static void uploadPassport(@NonNull final OnTaskCompleteListener listener,
+                                String companyAPIKey, String accessCode,
+                                String base64EncodedIdFront) {
+        uploadIdEndpointsJoiner(listener, companyAPIKey, accessCode, base64EncodedIdFront,
+                null, UploadIdTypes.uploadPassport);
+    }
 
     private static void uploadIdEndpointsJoiner(@NonNull final OnTaskCompleteListener listener,
                                           final String companyAPIKey, final String accessCode,
@@ -1256,17 +1393,30 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
-                StringUtilities.isNullOrEmpty(base64EncodedIdBack)) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
+        if(type == UploadIdTypes.uploadPassport){
+            if(StringUtilities.isNullOrEmpty(base64EncodedIdFront)){
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
+        } else {
+            if (StringUtilities.isNullOrEmpty(base64EncodedIdFront) ||
+                    StringUtilities.isNullOrEmpty(base64EncodedIdBack)) {
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
         }
 
         UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
         uploadPhotosObj.setAccessCode(accessCode);
         Call<SimpleResponseObj> call;
         switch (type){
+
+            case uploadPassport:
+                uploadPhotosObj.setIdFront(base64EncodedIdFront);
+                call = myService.uploadPassport(companyAPIKey, uploadPhotosObj);
+                break;
 
             case uploadId:
                 uploadPhotosObj.setIdFront(base64EncodedIdFront);
@@ -1328,17 +1478,33 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        if (idFrontBitmap == null || idBackBitmap == null) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
+        if(type == UploadIdTypes.uploadPassport){
+            if (idFrontBitmap == null) {
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
+        } else {
+            if (idFrontBitmap == null || idBackBitmap == null) {
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
         }
 
-        if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
-                idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
-            listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
+        if(type == UploadIdTypes.uploadPassport){
+            if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0) {
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
+        } else {
+            if (idFrontBitmap.getRowBytes() <= 0 || idFrontBitmap.getHeight() <= 0 ||
+                    idBackBitmap.getRowBytes() <= 0 || idBackBitmap.getHeight() <= 0) {
+                listener.onTaskComplete(buildErrorObject("Please pass in a valid photo"),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                return;
+            }
         }
 
         ConvertPhotosAsync async = new ConvertPhotosAsync(null, new OnTaskCompleteListener() {
@@ -1353,6 +1519,10 @@ public class AuthenticatingAPICalls {
                         uploadPhotosObj.setAccessCode(accessCode);
                         Call<SimpleResponseObj> call;
                         switch (type){
+                            case uploadPassport:
+                                call = myService.uploadPassport(companyAPIKey, uploadPhotosObj);
+                                break;
+
                             case uploadId:
                                 call = myService.uploadId(companyAPIKey, uploadPhotosObj);
                                 break;
@@ -1429,6 +1599,60 @@ public class AuthenticatingAPICalls {
         UserHeader.User u = new UserHeader.User();
         u.setAccessCode(accessCode);
         Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
+        call.enqueue(new Callback<CheckPhotoResultsHeader>() {
+            @Override
+            public void onResponse(Call<CheckPhotoResultsHeader> call, Response<CheckPhotoResultsHeader> response) {
+                try {
+                    Object object = response.body();
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                    } catch (NullPointerException nope){}
+                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) object;
+                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
+                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT_OBJECT);
+                } catch (AuthenticatingException authE) {
+                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    AuthenticatingAPICalls.printOutResponseJson(authE,
+                            AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<CheckPhotoResultsHeader> call, Throwable t) {
+                t.printStackTrace();
+                listener.onTaskComplete(buildErrorObject(t.getMessage()),
+                        AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            }
+        });
+    }
+
+    /**
+     * Check the current status of the asynchronous image processing on the server
+     *
+     * @param listener {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @return {@link CheckPhotoResultsHeader.CheckPhotoResults}
+     * @throws AuthenticatingException {@link AuthenticatingException}
+     */
+    public static void checkUploadPassport(@NonNull final OnTaskCompleteListener listener,
+                                     String companyAPIKey,
+                                     String accessCode) {
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+
+        UserHeader.User u = new UserHeader.User();
+        u.setAccessCode(accessCode);
+        Call<CheckPhotoResultsHeader> call = myService.checkUploadPassport(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
         call.enqueue(new Callback<CheckPhotoResultsHeader>() {
             @Override
@@ -2192,105 +2416,185 @@ public class AuthenticatingAPICalls {
         protected UploadPhotosObj doInBackground(Void... params) {
             UploadPhotosObj uploadPhotosObj;
             //First check type:
-            if(isString){
-                Pattern pattern = Pattern.compile(BASE_64_ENCODED_STRING_REGEX);
-                Matcher m1 = pattern.matcher(this.base64EncodedImage1);
-                Matcher m2 = pattern.matcher(this.base64EncodedImage2);
-                if(m1.matches() && m2.matches()){
-                    //Both strings are already converted properly to base 64
-                    stringOutput1 = base64EncodedImage1;
-                    stringOutput2 = base64EncodedImage2;
+            if(type == UploadIdTypes.uploadPassport){
+                if (isString) {
+                    Pattern pattern = Pattern.compile(BASE_64_ENCODED_STRING_REGEX);
+                    Matcher m1 = pattern.matcher(this.base64EncodedImage1);
+                    if (m1.matches()) {
+                        //Both strings are already converted properly to base 64
+                        stringOutput1 = base64EncodedImage1;
+                        return null;
+                    } else {
+                        //Strings are not properly formatted
+                        error = buildErrorObject("Improperly formatted base64Encoded Strings");
+                        return null;
+                    }
+
+                } else if (isBitmap) {
+                    if (bitmap1OrIDFront == null) {
+                        error = buildErrorObject("One or both bitmaps were null");
+                        return null;
+                    }
+
+                } else if (isUri) {
+                    file1 = convertUriToFile(uri1);
+
+                    if (file1 == null) {
+                        error = buildErrorObject("One or both of URIs sent could not be converted to Files");
+                        return null;
+                    }
+
+                    bitmap1OrIDFront = convertFileToBitmap(file1);
+                    if (bitmap1OrIDFront == null) {
+                        error = buildErrorObject("One or both of the files could not be converted to bitmaps");
+                        return null;
+                    }
+
+                } else if (isFile) {
+                    if (file1 == null) {
+                        error = buildErrorObject("One or both of the files passed were null");
+                        return null;
+                    }
+                    bitmap1OrIDFront = convertFileToBitmap(file1);
+                    if (bitmap1OrIDFront == null) {
+                        error = buildErrorObject("One or both of the files could not be converted to bitmaps");
+                        return null;
+                    }
+
+                }
+
+                try {
+                    if (isBitmapTooLarge(bitmap1OrIDFront)) {
+                        bitmap1OrIDFront = AuthenticatingAPICalls.resizePhoto(bitmap1OrIDFront);
+                    }
+                } catch (OutOfMemoryError oom) {
+                    //File too large, resize to very small
+                    bitmap1OrIDFront = shrinkPhoto(bitmap1OrIDFront, 8);
+                }
+
+                try {
+                    stringOutput1 = encodeImage(bitmap1OrIDFront);
+                } catch (Exception e) {
+                    error = buildErrorObject("Could not convert images to base64: " + e.getMessage());
                     return null;
+                }
+
+                if (isNullOrEmpty(stringOutput1)) {
+                    uploadPhotosObj = null;
+                    error = buildErrorObject("Could not convert images to base64");
                 } else {
-                    //Strings are not properly formatted
-                    error = buildErrorObject("Improperly formatted base64Encoded Strings");
-                    return null;
+                    uploadPhotosObj = new UploadPhotosObj();
+                    switch (type) {
+                        case uploadPassport:
+                            uploadPhotosObj.setIdFront(stringOutput1);
+                            break;
+                    }
+                }
+            } else {
+                if (isString) {
+                    Pattern pattern = Pattern.compile(BASE_64_ENCODED_STRING_REGEX);
+                    Matcher m1 = pattern.matcher(this.base64EncodedImage1);
+                    Matcher m2 = pattern.matcher(this.base64EncodedImage2);
+                    if (m1.matches() && m2.matches()) {
+                        //Both strings are already converted properly to base 64
+                        stringOutput1 = base64EncodedImage1;
+                        stringOutput2 = base64EncodedImage2;
+                        return null;
+                    } else {
+                        //Strings are not properly formatted
+                        error = buildErrorObject("Improperly formatted base64Encoded Strings");
+                        return null;
+                    }
+
+                } else if (isBitmap) {
+                    if (bitmap1OrIDFront == null || bitmap2OrIDBack == null) {
+                        error = buildErrorObject("One or both bitmaps were null");
+                        return null;
+                    }
+
+                } else if (isUri) {
+                    file1 = convertUriToFile(uri1);
+                    file2 = convertUriToFile(uri2);
+
+                    if (file1 == null || file2 == null) {
+                        error = buildErrorObject("One or both of URIs sent could not be converted to Files");
+                        return null;
+                    }
+
+                    bitmap1OrIDFront = convertFileToBitmap(file1);
+                    bitmap2OrIDBack = convertFileToBitmap(file2);
+                    if (bitmap1OrIDFront == null || bitmap2OrIDBack == null) {
+                        error = buildErrorObject("One or both of the files could not be converted to bitmaps");
+                        return null;
+                    }
+
+                } else if (isFile) {
+                    if (file1 == null || file2 == null) {
+                        error = buildErrorObject("One or both of the files passed were null");
+                        return null;
+                    }
+                    bitmap1OrIDFront = convertFileToBitmap(file1);
+                    bitmap2OrIDBack = convertFileToBitmap(file2);
+                    if (bitmap1OrIDFront == null || bitmap2OrIDBack == null) {
+                        error = buildErrorObject("One or both of the files could not be converted to bitmaps");
+                        return null;
+                    }
+
                 }
 
-            } else if (isBitmap){
-                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
-                    error = buildErrorObject("One or both bitmaps were null");
-                    return null;
+                try {
+                    if (isBitmapTooLarge(bitmap1OrIDFront)) {
+                        bitmap1OrIDFront = AuthenticatingAPICalls.resizePhoto(bitmap1OrIDFront);
+                    }
+                } catch (OutOfMemoryError oom) {
+                    //File too large, resize to very small
+                    bitmap1OrIDFront = shrinkPhoto(bitmap1OrIDFront, 8);
                 }
 
-            }  else if (isUri){
-                file1 = convertUriToFile(uri1);
-                file2 = convertUriToFile(uri2);
-
-                if(file1 == null || file2 == null){
-                    error = buildErrorObject("One or both of URIs sent could not be converted to Files");
-                    return null;
-                }
-
-                bitmap1OrIDFront = convertFileToBitmap(file1);
-                bitmap2OrIDBack = convertFileToBitmap(file2);
-                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
-                    error = buildErrorObject("One or both of the files could not be converted to bitmaps");
-                    return null;
-                }
-
-            } else if (isFile){
-                if(file1 == null || file2 == null){
-                    error = buildErrorObject("One or both of the files passed were null");
-                    return null;
-                }
-                bitmap1OrIDFront = convertFileToBitmap(file1);
-                bitmap2OrIDBack = convertFileToBitmap(file2);
-                if(bitmap1OrIDFront == null || bitmap2OrIDBack == null){
-                    error = buildErrorObject("One or both of the files could not be converted to bitmaps");
-                    return null;
-                }
-
-            }
-
-            try {
-                if(isBitmapTooLarge(bitmap1OrIDFront)){
-                    bitmap1OrIDFront = AuthenticatingAPICalls.resizePhoto(bitmap1OrIDFront);
-                }
-            } catch (OutOfMemoryError oom){
-                //File too large, resize to very small
-                bitmap1OrIDFront = shrinkPhoto(bitmap1OrIDFront, 8);
-            }
-
-            try {
-                if(isBitmapTooLarge(bitmap2OrIDBack)){
-                    bitmap2OrIDBack = AuthenticatingAPICalls.resizePhoto(bitmap2OrIDBack);
-                }
+                try {
+                    if (isBitmapTooLarge(bitmap2OrIDBack)) {
+                        bitmap2OrIDBack = AuthenticatingAPICalls.resizePhoto(bitmap2OrIDBack);
+                    }
 //                while(isBitmapTooLarge(bitmap2OrIDBack)){
 //                    bitmap2OrIDBack = shrinkPhoto(bitmap2OrIDBack, 2);
 //                }
-            } catch (OutOfMemoryError oom){
-                //File too large, resize to very small
-                bitmap2OrIDBack = shrinkPhoto(bitmap2OrIDBack, 8);
-            }
-            try {
-                stringOutput1 = encodeImage(bitmap1OrIDFront);
-                stringOutput2 = encodeImage(bitmap2OrIDBack);
-            } catch (Exception e) {
-                error = buildErrorObject("Could not convert images to base64: " + e.getMessage());
-                return null;
-            }
+                } catch (OutOfMemoryError oom) {
+                    //File too large, resize to very small
+                    bitmap2OrIDBack = shrinkPhoto(bitmap2OrIDBack, 8);
+                }
+                try {
+                    stringOutput1 = encodeImage(bitmap1OrIDFront);
+                    stringOutput2 = encodeImage(bitmap2OrIDBack);
+                } catch (Exception e) {
+                    error = buildErrorObject("Could not convert images to base64: " + e.getMessage());
+                    return null;
+                }
 
-            if(isNullOrEmpty(stringOutput1) || isNullOrEmpty(stringOutput2)){
-                uploadPhotosObj = null;
-                error = buildErrorObject("Could not convert images to base64");
-            } else {
-                uploadPhotosObj = new UploadPhotosObj();
-                switch (type){
-                    case uploadIdEnhanced:
-                    case uploadId:
-                        uploadPhotosObj.setIdFront(stringOutput1);
-                        uploadPhotosObj.setIdBack(stringOutput2);
-                        break;
+                if (isNullOrEmpty(stringOutput1) || isNullOrEmpty(stringOutput2)) {
+                    uploadPhotosObj = null;
+                    error = buildErrorObject("Could not convert images to base64");
+                } else {
+                    uploadPhotosObj = new UploadPhotosObj();
+                    switch (type) {
+                        case uploadIdEnhanced:
+                        case uploadId:
+                            uploadPhotosObj.setIdFront(stringOutput1);
+                            uploadPhotosObj.setIdBack(stringOutput2);
+                            break;
 
-                    case comparePhotos:
-                        uploadPhotosObj.setImg1(stringOutput1);
-                        uploadPhotosObj.setImg2(stringOutput2);
-                        break;
+                        case comparePhotos:
+                            uploadPhotosObj.setImg1(stringOutput1);
+                            uploadPhotosObj.setImg2(stringOutput2);
+                            break;
+                    }
                 }
             }
-            bitmap1OrIDFront.recycle();
-            bitmap2OrIDBack.recycle();
+            if(bitmap1OrIDFront != null) {
+                bitmap1OrIDFront.recycle();
+            }
+            if(bitmap2OrIDBack != null) {
+                bitmap2OrIDBack.recycle();
+            }
             return uploadPhotosObj;
         }
 

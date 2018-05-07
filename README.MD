@@ -1,5 +1,5 @@
 [![Platform](https://img.shields.io/badge/platform-android-green.svg)](http://developer.android.com/index.html)
-[![API](https://img.shields.io/badge/API-11%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=11)
+[![API](https://img.shields.io/badge/API-14%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=14)
 [![JitPack](https://jitpack.io/v/stevenbward/Authenticating-Android-SDK.svg)](https://jitpack.io/#stevenbward/Authenticating-Android-SDK)
 <!--
 [![Build Status](https://travis-ci.org/stevenbward/Authenticating-Android-SDK.svg?branch=master)](https://travis-ci.org/stevenbward/Authenticating-Android-SDK)
@@ -32,7 +32,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.7'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.8'
 		compile 'com.squareup.retrofit2:retrofit:2.3.0'
 		compile 'com.squareup.okhttp3:okhttp:3.9.0'
 		compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'

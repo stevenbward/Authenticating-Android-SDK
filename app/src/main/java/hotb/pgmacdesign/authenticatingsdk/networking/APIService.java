@@ -171,6 +171,19 @@ public interface APIService {
                                      @Body UploadPhotosObj uploadPhotosObj
     );
 
+    /**
+     * Upload a picture of a passport for the verification process. Note that only the front (The
+     * portion with the data, usually on the first or second page) is required.
+     * @param authKey
+     * @param uploadPhotosObj Required fields here are: accessCode and idFront. Note that
+     *                        the image is in a baseEncoded64 string format.
+     * @return
+     */
+    @POST(API + VERSION + "/uploadPassport")
+    Call<SimpleResponseObj> uploadPassport(@Header("authKey") String authKey,
+                                     @Body UploadPhotosObj uploadPhotosObj
+    );
+
 
     /**
      * Upload a front and back of an ID for identity proof verification (enhanced, see
@@ -193,6 +206,17 @@ public interface APIService {
      */
     @POST(API + VERSION + "/checkUploadId")
     Call<CheckPhotoResultsHeader> checkUploadId(@Header("authKey") String authKey,
+                                                @Body UserHeader.User user
+    );
+
+    /**
+     * Check the status of the uploadPassport endpoint background operation.
+     * @param authKey
+     * @param user Required field is accessCode
+     * @return {@link CheckPhotoResultsHeader}
+     */
+    @POST(API + VERSION + "/checkUploadPassport")
+    Call<CheckPhotoResultsHeader> checkUploadPassport(@Header("authKey") String authKey,
                                                 @Body UserHeader.User user
     );
 

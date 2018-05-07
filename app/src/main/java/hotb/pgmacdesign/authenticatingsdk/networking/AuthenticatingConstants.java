@@ -21,9 +21,7 @@ import okhttp3.MediaType;
 
 public class AuthenticatingConstants {
 
-    // TODO: 2018-03-30 change me
     public static final String BASE_URL = "https://api.authenticating.com/";
-
 
     public static final int TAG_SIMPLE_RESPONSE_OBJ = 19000;
     public static final int TAG_ERROR_RESPONSE = 19001;
