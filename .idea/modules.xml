@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AuthenticateAPI.iml" filepath="$PROJECT_DIR$/AuthenticateAPI.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AuthenticateAPI-ForWeb.iml" filepath="$PROJECT_DIR$/AuthenticateAPI-ForWeb.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/authenticating-api-android-sdk.iml" filepath="$PROJECT_DIR$/authenticating-api-android-sdk.iml" />
+      <module fileurl="file://D:\pmacdowell\HOTB Android Workspace - 2016-03-21\AuthenticateAPI-ForWeb\authenticating-api-android-sdk.iml" filepath="D:\pmacdowell\HOTB Android Workspace - 2016-03-21\AuthenticateAPI-ForWeb\authenticating-api-android-sdk.iml" />
     </modules>
   </component>
 </project>
