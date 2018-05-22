@@ -115,19 +115,16 @@ This library utilizes the following Dependencies:
 ### Constant Integer Tags
 If you choose to use the API Calls that use the OnTaskComplete listener, they will send back an integer tag that defines the return type so you don't need to run if checks on instanceof. The int tags it uses are located in the Constants class under the misc package. I have listed the most used ones here:
 
-* public static final int	TAG_SIMPLE_RESPONSE_OBJ	19000
+* public static final int	TAG_SIMPLE_RESPONSE 19000
 
-* public static final int	TAG_ERROR_RESPONSE	19001
+* public static final int	TAG_ERROR_RESPONSE 19001
 
-* public static final int	TAG_AVAILABLE_NETWORKS	19002
+* public static final int	TAG_AVAILABLE_NETWORKS 19002
 
-* public static final int	TAG_LIST_OF_STRINGS	19003
+* public static final int	TAG_USER 19003
 
-* public static final int	TAG_USER_HEADER	19004
+* public static final int	TAG_QUIZ_QUESTIONS 19004
 
-* public static final int	TAG_QUIZ_QUESTIONS_HEADER	19005
+* public static final int	TAG_CHECK_PHOTO_RESULT 19005
 
-* public static final int	TAG_UPLOAD_PHOTO_OBJECT	19006
-
-* public static final int	TAG_CHECK_PHOTO_RESULT_OBJECT	19007
 
