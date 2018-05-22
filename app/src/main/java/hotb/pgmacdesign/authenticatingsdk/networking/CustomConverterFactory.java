@@ -36,7 +36,7 @@ public class CustomConverterFactory extends Converter.Factory  {
 
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
-        if(type ==TYPE_BOOLEAN){
+        if(type == TYPE_BOOLEAN){
             //Boolean
             try {
                 Converter<ResponseBody, ?> converter = new Converter<ResponseBody, Boolean>() {
@@ -99,7 +99,7 @@ public class CustomConverterFactory extends Converter.Factory  {
                 return gsonConverter;
             } catch (Exception e){
                 Log.d("CustomConverterFactory",
-                        "Make sure you don't have the same '@Serialized' string name declaration over 2 different variables. This will cause an exception");
+                        "Make sure you don't have the same '@Serialized' string name declaration over 2 different variables. This will cause an exception. See this link for details: https://stackoverflow.com/a/42517143/2480714");
                 e.printStackTrace();
             }
         }

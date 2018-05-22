@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName;
  * Created by pmacdowell on 2017-08-03.
  */
 
-public class VerifyQuizObj {
+public class VerifyQuizObj  {
 
     @SerializedName("accessCode")
     private String accessCode;

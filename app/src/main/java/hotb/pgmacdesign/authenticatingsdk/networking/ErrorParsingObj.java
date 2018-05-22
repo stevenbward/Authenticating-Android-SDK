@@ -7,43 +7,30 @@ import java.util.List;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.TopLevelObj;
 
 /**
- * Error information class. This 'header' structure allows easier error parsing.
+ * Error information class.
  * Created by pmacdowell on 2017-07-13.
  */
 class ErrorParsingObj extends TopLevelObj {
 
-    @SerializedName("error")
-    private ErrorInfo errorInfo;
+    @SerializedName("missingInfo")
+    private List<String>missingInfo;
+    @SerializedName("errorMessage")
+    private String errorMessage;
 
-    protected ErrorInfo getErrorInfo() {
-        return errorInfo;
+    protected List<String> getMissingInfo() {
+        return missingInfo;
     }
 
-    protected void setErrorInfo(ErrorInfo errorInfo) {
-        this.errorInfo = errorInfo;
+    protected void setMissingInfo(List<String> missingInfo) {
+        this.missingInfo = missingInfo;
     }
 
-    static class ErrorInfo {
-        @SerializedName("missingInfo")
-        private List<String>missingInfo;
-        @SerializedName("errorMessage")
-        private String errorMessage;
+    protected String getErrorMessage() {
+        return errorMessage;
+    }
 
-        protected List<String> getMissingInfo() {
-            return missingInfo;
-        }
-
-        protected void setMissingInfo(List<String> missingInfo) {
-            this.missingInfo = missingInfo;
-        }
-
-        protected String getErrorMessage() {
-            return errorMessage;
-        }
-
-        protected void setErrorMessage(String errorMessage) {
-            this.errorMessage = errorMessage;
-        }
+    protected void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
 }

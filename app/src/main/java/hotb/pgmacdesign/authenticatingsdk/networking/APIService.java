@@ -1,15 +1,16 @@
 package hotb.pgmacdesign.authenticatingsdk.networking;
 
-import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworksHeader;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResultsHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworks;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResults;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.PhoneVerification;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObjectHeader;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponseObj;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObject;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponse;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.SocialNetworkObj;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.TopLevelObj;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.UploadPhotosObj;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.User;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
@@ -24,7 +25,7 @@ public interface APIService {
 
     //Endpoint + Version Strings
     public static final String API = "/api";
-    public static final String VERSION = "/v1";
+    public static final String VERSION = "/v2";
 
     /**
      * Send an SMS/ Text MSG to the phone number attached to the user accessCode being sent.
@@ -34,7 +35,7 @@ public interface APIService {
      * @return {@link TopLevelObj}
      */
     @POST(API + VERSION + "/verifyPhone ")
-    Call<SimpleResponseObj> verifyPhone(@Header("authKey") String authKey,
+    Call<ResponseBody> verifyPhone(@Header("authKey") String authKey,
                                         @Body PhoneVerification phoneInfo
     );
 
@@ -43,10 +44,10 @@ public interface APIService {
      *
      * @param authKey API Key needed for calls
      * @param phoneInfo     Only required fields include: accessCode, smsCode
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      */
     @POST(API + VERSION + "/verifyPhoneCode ")
-    Call<SimpleResponseObj> verifyPhoneCode(@Header("authKey") String authKey,
+    Call<ResponseBody> verifyPhoneCode(@Header("authKey") String authKey,
                                             @Body PhoneVerification phoneInfo
     );
 
@@ -55,11 +56,11 @@ public interface APIService {
      *
      * @param authKey
      * @param user          Only requires accessCode
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      */
     @POST(API + VERSION + "/verifyEmail ")
-    Call<SimpleResponseObj> verifyEmail(@Header("authKey") String authKey,
-                                        @Body UserHeader.User user
+    Call<ResponseBody> verifyEmail(@Header("authKey") String authKey,
+                                        @Body User user
     );
 
     /**
@@ -68,10 +69,10 @@ public interface APIService {
      * @param authKey    API Key needed for calls
      * @param socialNetworkObj Only required fields include: accessCode, network,
      *                         socialMediaAccessToken, socialMediaUserId
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      */
     @POST(API + VERSION + "/verifySocialNetworks")
-    Call<SimpleResponseObj> verifySocialNetworks(@Header("authKey") String authKey,
+    Call<ResponseBody> verifySocialNetworks(@Header("authKey") String authKey,
                                                  @Body SocialNetworkObj socialNetworkObj
     );
 
@@ -80,11 +81,11 @@ public interface APIService {
      *
      * @param authKey API Key needed for calls
      * @param user          Only required fields include: accessCode
-     * @return {@link AvailableNetworksHeader}
+     * @return {@link AvailableNetworks}
      */
     @POST(API + VERSION + "/getAvailableNetworks")
-    Call<AvailableNetworksHeader> getAvailableNetworks(@Header("authKey") String authKey,
-                                                       @Body UserHeader.User user
+    Call<ResponseBody> getAvailableNetworks(@Header("authKey") String authKey,
+                                                       @Body User user
     );
 
     /**
@@ -92,11 +93,11 @@ public interface APIService {
      *
      * @param authKey
      * @param user          only required field here is the accessCode
-     * @return {@link QuizObjectHeader}
+     * @return {@link QuizObject}
      */
     @POST(API + VERSION + "/getQuiz")
-    Call<QuizObjectHeader> getQuiz(@Header("authKey") String authKey,
-                                   @Body UserHeader.User user
+    Call<ResponseBody> getQuiz(@Header("authKey") String authKey,
+                                   @Body User user
     );
 
     /**
@@ -106,10 +107,10 @@ public interface APIService {
      * @param verifyQuizObj Required fields include: accessCode, quizId, transactionId,
      *                      responseUniqueId, and an array of Answers objects.
      *                      {@link hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj.Answer}
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      */
     @POST(API + VERSION + "/verifyQuiz ")
-    Call<SimpleResponseObj> verifyQuiz(@Header("authKey") String authKey,
+    Call<ResponseBody> verifyQuiz(@Header("authKey") String authKey,
                             @Body VerifyQuizObj verifyQuizObj
     );
 
@@ -118,11 +119,11 @@ public interface APIService {
      *
      * @param authKey
      * @param userObj       only required value is accessCode
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      */
     @POST(API + VERSION + "/generateCriminalReport ")
-    Call<SimpleResponseObj> generateCriminalReport(@Header("authKey") String authKey,
-                                        @Body UserHeader.User userObj
+    Call<ResponseBody> generateCriminalReport(@Header("authKey") String authKey,
+                                        @Body User userObj
     );
 
     /**
@@ -130,21 +131,21 @@ public interface APIService {
      * @param userObj       Access code is required. Other fields will be updated if included.
      *                      Fields that can be updated include: email, phone, firstName, lastName,
      *                      address, city, state, zipCode, state, month, day, year, ssn
-     * @return {@link UserHeader}
+     * @return {@link User}
      */
     @POST(API + VERSION + "/updateUser ")
-    Call<UserHeader> updateUser(@Header("authKey") String authKey,
-                                @Body UserHeader.User userObj
+    Call<ResponseBody> updateUser(@Header("authKey") String authKey,
+                                @Body User userObj
     );
 
     /**
      * @param authKey
      * @param userObj       Access code is required.
-     * @return {@link UserHeader}
+     * @return {@link User}
      */
     @POST(API + VERSION + "/getUser ")
-    Call<UserHeader> getUser(@Header("authKey") String authKey,
-                             @Body UserHeader.User userObj
+    Call<ResponseBody> getUser(@Header("authKey") String authKey,
+                             @Body User userObj
     );
 
     /**
@@ -155,7 +156,7 @@ public interface APIService {
      * @return
      */
     @POST(API + VERSION + "/comparePhotos")
-    Call<SimpleResponseObj> comparePhotos(@Header("authKey") String authKey,
+    Call<ResponseBody> comparePhotos(@Header("authKey") String authKey,
                                            @Body UploadPhotosObj uploadPhotosObj
     );
 
@@ -167,7 +168,7 @@ public interface APIService {
      * @return
      */
     @POST(API + VERSION + "/uploadId")
-    Call<SimpleResponseObj> uploadId(@Header("authKey") String authKey,
+    Call<ResponseBody> uploadId(@Header("authKey") String authKey,
                                      @Body UploadPhotosObj uploadPhotosObj
     );
 
@@ -180,7 +181,7 @@ public interface APIService {
      * @return
      */
     @POST(API + VERSION + "/uploadPassport")
-    Call<SimpleResponseObj> uploadPassport(@Header("authKey") String authKey,
+    Call<ResponseBody> uploadPassport(@Header("authKey") String authKey,
                                      @Body UploadPhotosObj uploadPhotosObj
     );
 
@@ -194,7 +195,7 @@ public interface APIService {
      * @return
      */
     @POST(API + VERSION + "/uploadIdEnhanced")
-    Call<SimpleResponseObj> uploadIdEnhanced(@Header("authKey") String authKey,
+    Call<ResponseBody> uploadIdEnhanced(@Header("authKey") String authKey,
                                      @Body UploadPhotosObj uploadPhotosObj
     );
 
@@ -202,22 +203,22 @@ public interface APIService {
      * Check the status of the uploadId endpoint background operation.
      * @param authKey
      * @param user Required field is accessCode
-     * @return {@link CheckPhotoResultsHeader}
+     * @return {@link CheckPhotoResults}
      */
     @POST(API + VERSION + "/checkUploadId")
-    Call<CheckPhotoResultsHeader> checkUploadId(@Header("authKey") String authKey,
-                                                @Body UserHeader.User user
+    Call<ResponseBody> checkUploadId(@Header("authKey") String authKey,
+                                                @Body User user
     );
 
     /**
      * Check the status of the uploadPassport endpoint background operation.
      * @param authKey
      * @param user Required field is accessCode
-     * @return {@link CheckPhotoResultsHeader}
+     * @return {@link CheckPhotoResults}
      */
     @POST(API + VERSION + "/checkUploadPassport")
-    Call<CheckPhotoResultsHeader> checkUploadPassport(@Header("authKey") String authKey,
-                                                @Body UserHeader.User user
+    Call<ResponseBody> checkUploadPassport(@Header("authKey") String authKey,
+                                           @Body User user
     );
 
 }

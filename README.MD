@@ -17,7 +17,7 @@ This is the code for the Authenticating SDK. The examples section is in a differ
 
 ## Requirements
 
-<aside class="notice">Note that this requires API Level 11 or higher</aside><br>
+<aside class="notice">Note that this requires API Level 14 or higher</aside><br>
 
 ## Installation
 ```java
@@ -32,7 +32,7 @@ allprojects {
 //Step 2
 android {
     dependencies {
-		compile 'com.github.stevenbward:Authenticating-Android-SDK:1.0.10'
+		compile 'com.github.stevenbward:Authenticating-Android-SDK:2.0.0'
 		compile 'com.squareup.retrofit2:retrofit:2.3.0'
 		compile 'com.squareup.okhttp3:okhttp:3.9.0'
 		compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'

@@ -23,16 +23,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import hotb.pgmacdesign.authenticatingsdk.datamodels.AuthenticatingException;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworksHeader;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResultsHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.AvailableNetworks;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.CheckPhotoResults;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.PhoneVerification;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObjectHeader;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponseObj;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.QuizObject;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.SimpleResponse;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.SocialNetworkObj;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.UploadPhotosObj;
-import hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader;
+import hotb.pgmacdesign.authenticatingsdk.datamodels.User;
 import hotb.pgmacdesign.authenticatingsdk.datamodels.VerifyQuizObj;
 import hotb.pgmacdesign.authenticatingsdk.interfaces.OnTaskCompleteListener;
+import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -53,7 +54,9 @@ public class AuthenticatingAPICalls {
     private static final String UNAUTHORIZED_REQUEST = "Unauthorized request";
     private static final String GENERIC_ERROR_STRING = "An unknown error has occurred";
     private static final String SENT_IMAGE_BAD = "One or more of the passed image URIs was either null or was unable to be parsed";
-
+    private static final String MUST_INCLUDE_ACCESS_CODE = "You must include the AccessCode in this call";
+    private static final String MISSING_AUTH_KEY = "You did not include your authKey. This is obtained when you register for an account. Calls will not function without this key";
+    private static final String PARSING_CONVERSION_ERROR = "Could not convert server response data. Please enabling logging to see full request and response logs.";
     private static final String BASE_64_ENCODED_STRING_REGEX = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$";
     private static final String URL_BASE = AuthenticatingConstants.BASE_URL;
 
@@ -113,30 +116,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link AvailableNetworksHeader}
+     * @return {@link AvailableNetworks}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static AvailableNetworksHeader getAvailableNetworks(String companyAPIKey,
-                                                               String accessCode) throws AuthenticatingException {
+    public static Object getAvailableNetworks(String companyAPIKey,
+                                                         String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<AvailableNetworksHeader> call = myService.getAvailableNetworks(companyAPIKey, u);
+        Call<ResponseBody> call = myService.getAvailableNetworks(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        AvailableNetworksHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
             Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (AvailableNetworksHeader) response.body();
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_AVAILABLE_NETWORKS);
+
+            toReturn = response.body();
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -154,13 +158,13 @@ public class AuthenticatingAPICalls {
      *                               faecbook, google, twitter, instagram
      * @param socialMediaAccessToken The access token you received from the social media login
      * @param socialMediaUserId      The user id you received from the social media login
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj verifySocialNetworks(String companyAPIKey,
-                                                         String accessCode, String network,
-                                                         String socialMediaAccessToken,
-                                                         String socialMediaUserId) throws AuthenticatingException {
+    public static Object verifySocialNetworks(String companyAPIKey,
+                                                      String accessCode, String network,
+                                                      String socialMediaAccessToken,
+                                                      String socialMediaUserId) throws AuthenticatingException {
 
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
@@ -170,21 +174,20 @@ public class AuthenticatingAPICalls {
         s.setNetwork(network);
         s.setSocialMediaAccessToken(socialMediaAccessToken);
         s.setSocialMediaUserId(socialMediaUserId);
-        Call<SimpleResponseObj> call = myService.verifySocialNetworks(companyAPIKey, s);
+        Call<ResponseBody> call = myService.verifySocialNetworks(companyAPIKey, s);
         AuthenticatingAPICalls.printOutRequestJson(s, AuthenticatingConstants.TYPE_SOCIAL_NETWORK_OBJ, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -198,31 +201,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj verifyPhone(String companyAPIKey,
-                                                String accessCode) throws AuthenticatingException {
+    public static Object verifyPhone(String companyAPIKey,
+                                             String accessCode) throws AuthenticatingException {
 
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
         PhoneVerification p = new PhoneVerification();
         p.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call = myService.verifyPhone(companyAPIKey, p);
+        Call<ResponseBody> call = myService.verifyPhone(companyAPIKey, p);
         AuthenticatingAPICalls.printOutRequestJson(p, AuthenticatingConstants.TYPE_PHONE_VERIFICATION, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -236,11 +239,11 @@ public class AuthenticatingAPICalls {
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
      * @param smsCode       The code received in the user's SMS to be sent outbound.
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj verifyPhoneCode(String companyAPIKey,
-                                                    String accessCode, String smsCode) throws AuthenticatingException {
+    public static Object verifyPhoneCode(String companyAPIKey,
+                                                 String accessCode, String smsCode) throws AuthenticatingException {
 
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
@@ -248,20 +251,20 @@ public class AuthenticatingAPICalls {
         PhoneVerification p = new PhoneVerification();
         p.setAccessCode(accessCode);
         p.setSmsCode(smsCode);
-        Call<SimpleResponseObj> call = myService.verifyPhoneCode(companyAPIKey, p);
+        Call<ResponseBody> call = myService.verifyPhoneCode(companyAPIKey, p);
         AuthenticatingAPICalls.printOutRequestJson(p, AuthenticatingConstants.TYPE_PHONE_VERIFICATION, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -273,31 +276,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj verifyEmail(String companyAPIKey,
-                                                String accessCode) throws AuthenticatingException {
+    public static Object verifyEmail(String companyAPIKey,
+                                             String accessCode) throws AuthenticatingException {
 
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call = myService.verifyEmail(companyAPIKey, user);
+        Call<ResponseBody> call = myService.verifyEmail(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -315,9 +318,9 @@ public class AuthenticatingAPICalls {
      * @param base64EncodedImage2  Second Photo File already converted to base64 encoded String
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj comparePhotos(String companyAPIKey, String accessCode,
-                                                  String base64EncodedImage1,
-                                                  String base64EncodedImage2) throws AuthenticatingException {
+    public static Object comparePhotos(String companyAPIKey, String accessCode,
+                                               String base64EncodedImage1,
+                                               String base64EncodedImage2) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedImage1,
                 base64EncodedImage2, UploadIdTypes.comparePhotos);
@@ -334,8 +337,8 @@ public class AuthenticatingAPICalls {
      * @param photo2Bitmap  Second Photo File to parse.
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj comparePhotos(String companyAPIKey, String accessCode,
-                                                  Bitmap photo1Bitmap, Bitmap photo2Bitmap) throws AuthenticatingException {
+    public static Object comparePhotos(String companyAPIKey, String accessCode,
+                                               Bitmap photo1Bitmap, Bitmap photo2Bitmap) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, photo1Bitmap, 
                 photo2Bitmap, UploadIdTypes.comparePhotos);
@@ -352,9 +355,9 @@ public class AuthenticatingAPICalls {
      * @param base64EncodeIdBack  Second Photo File already converted to base64 encoded String
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadId(String companyAPIKey, String accessCode,
-                                                  String base64EncodedIdFront,
-                                                  String base64EncodeIdBack) throws AuthenticatingException {
+    public static Object uploadId(String companyAPIKey, String accessCode,
+                                          String base64EncodedIdFront,
+                                          String base64EncodeIdBack) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
                 base64EncodeIdBack, UploadIdTypes.uploadId);
@@ -371,8 +374,8 @@ public class AuthenticatingAPICalls {
      * @param idBackBitmap  Second Photo File to parse.
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadId(String companyAPIKey, String accessCode,
-                                             Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
+    public static Object uploadId(String companyAPIKey, String accessCode,
+                                          Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
                 idBackBitmap, UploadIdTypes.uploadId);
@@ -389,8 +392,8 @@ public class AuthenticatingAPICalls {
      * @param base64EncodedIdFront First Photo File already converted to base64 encoded String
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadPassport(String companyAPIKey, String accessCode,
-                                             String base64EncodedIdFront) throws AuthenticatingException {
+    public static Object uploadPassport(String companyAPIKey, String accessCode,
+                                                String base64EncodedIdFront) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
                 null, UploadIdTypes.uploadPassport);
@@ -407,8 +410,8 @@ public class AuthenticatingAPICalls {
      * @param idFrontBitmap  First Photo File to parse.
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadPassport(String companyAPIKey, String accessCode,
-                                             Bitmap idFrontBitmap) throws AuthenticatingException {
+    public static Object uploadPassport(String companyAPIKey, String accessCode,
+                                                Bitmap idFrontBitmap) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
                 null, UploadIdTypes.uploadPassport);
@@ -425,9 +428,9 @@ public class AuthenticatingAPICalls {
      * @param base64EncodeIdBack  Second Photo File already converted to base64 encoded String
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadIdEnhanced(String companyAPIKey, String accessCode,
-                                             String base64EncodedIdFront,
-                                             String base64EncodeIdBack) throws AuthenticatingException {
+    public static Object uploadIdEnhanced(String companyAPIKey, String accessCode,
+                                                  String base64EncodedIdFront,
+                                                  String base64EncodeIdBack) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, base64EncodedIdFront,
                 base64EncodeIdBack, UploadIdTypes.uploadIdEnhanced);
@@ -444,16 +447,16 @@ public class AuthenticatingAPICalls {
      * @param idBackBitmap  Second Photo File to parse.
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj uploadIdEnhanced(String companyAPIKey, String accessCode,
-                                             Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
+    public static Object uploadIdEnhanced(String companyAPIKey, String accessCode,
+                                                  Bitmap idFrontBitmap, Bitmap idBackBitmap) throws AuthenticatingException {
 
         return uploadIdEndpointsJoiner(companyAPIKey, accessCode, idFrontBitmap,
                 idBackBitmap, UploadIdTypes.uploadIdEnhanced);
     }
     
-    private static SimpleResponseObj uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
-                                                       String base64EncodedIdFront, String base64EncodeIdBack,
-                                                       final UploadIdTypes type) throws AuthenticatingException{
+    private static Object uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
+                                                          String base64EncodedIdFront, String base64EncodeIdBack,
+                                                          final UploadIdTypes type) throws AuthenticatingException{
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             return null;
         }
@@ -463,7 +466,7 @@ public class AuthenticatingAPICalls {
             return null;
         }
 
-        Call<SimpleResponseObj> call;
+        Call<ResponseBody> call;
         UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
         uploadPhotosObj.setAccessCode(accessCode);
         switch (type){
@@ -487,27 +490,27 @@ public class AuthenticatingAPICalls {
                 call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
                 break;
         }
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
         return toReturn;
     }
 
-    private static SimpleResponseObj uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
-                                                       Bitmap idFrontBitmap, Bitmap idBackBitmap,
-                                                       final UploadIdTypes type) throws AuthenticatingException{
+    private static Object uploadIdEndpointsJoiner(final String companyAPIKey, final String accessCode,
+                                                          Bitmap idFrontBitmap, Bitmap idBackBitmap,
+                                                          final UploadIdTypes type) throws AuthenticatingException{
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             return null;
         }
@@ -572,7 +575,7 @@ public class AuthenticatingAPICalls {
             return null;
         }
 
-        Call<SimpleResponseObj> call;
+        Call<ResponseBody> call;
 
         switch (type){
             case uploadPassport:
@@ -600,18 +603,18 @@ public class AuthenticatingAPICalls {
                 break;
         }
 
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -623,32 +626,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link CheckPhotoResultsHeader}
+     * @return {@link CheckPhotoResults}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static CheckPhotoResultsHeader checkUploadId(String companyAPIKey,
-                                                 String accessCode) throws AuthenticatingException {
+    public static Object checkUploadId(String companyAPIKey,
+                                                  String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        Call<ResponseBody> call = myService.checkUploadId(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        CheckPhotoResultsHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (CheckPhotoResultsHeader) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn,
-                    AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
+            toReturn =  object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -660,32 +662,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link CheckPhotoResultsHeader}
+     * @return {@link CheckPhotoResults}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static CheckPhotoResultsHeader checkUploadPassport(String companyAPIKey,
+    public static Object checkUploadPassport(String companyAPIKey,
                                                         String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<CheckPhotoResultsHeader> call = myService.checkUploadPassport(companyAPIKey, u);
+        Call<ResponseBody> call = myService.checkUploadPassport(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        CheckPhotoResultsHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (CheckPhotoResultsHeader) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn,
-                    AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -697,31 +698,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link QuizObjectHeader}
+     * @return {@link QuizObject}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static QuizObjectHeader getQuiz(String companyAPIKey,
-                                           String accessCode) throws AuthenticatingException {
+    public static Object getQuiz(String companyAPIKey,
+                                     String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<QuizObjectHeader> call = myService.getQuiz(companyAPIKey, u);
+        Call<ResponseBody> call = myService.getQuiz(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        QuizObjectHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (QuizObjectHeader) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_QUIZ_QUESTIONS_HEADER);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -737,18 +738,18 @@ public class AuthenticatingAPICalls {
      * @param answers          Array of answer objects that contain the responses to the questions
      *                         that were obtained from the
      *                         {@link AuthenticatingAPICalls#getQuiz(OnTaskCompleteListener, String, String)} endpoint.
-     * @param quizId           The quiz id. This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
+     * @param quizId           The quiz id. This is obtained from the {@link QuizObject} obtained from getQuiz()
      * @param transactionId    The quiz transaction id.
-     *                         This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
+     *                         This is obtained from the {@link QuizObject} obtained from getQuiz()
      * @param responseUniqueId The quiz response unique id.
-     *                         This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
-     * @return {@link SimpleResponseObj}
+     *                         This is obtained from the {@link QuizObject} obtained from getQuiz()
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj verifyQuiz(String companyAPIKey,
-                                               String accessCode, VerifyQuizObj.Answer[] answers,
-                                               String quizId, String transactionId,
-                                               String responseUniqueId) throws AuthenticatingException {
+    public static Object verifyQuiz(String companyAPIKey,
+                                            String accessCode, VerifyQuizObj.Answer[] answers,
+                                            String quizId, String transactionId,
+                                            String responseUniqueId) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
@@ -760,20 +761,20 @@ public class AuthenticatingAPICalls {
         v.setTransactionID(transactionId);
         v.setResponseUniqueId(responseUniqueId);
 
-        Call<SimpleResponseObj> call = myService.verifyQuiz(companyAPIKey, v);
+        Call<ResponseBody> call = myService.verifyQuiz(companyAPIKey, v);
         AuthenticatingAPICalls.printOutRequestJson(v, AuthenticatingConstants.TYPE_VERIFY_QUIZ_OBJ, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -787,32 +788,32 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link SimpleResponseObj}
+     * @return {@link SimpleResponse}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static SimpleResponseObj generateBackgroundReport(String companyAPIKey,
-                                                             String accessCode) throws AuthenticatingException {
+    public static Object generateBackgroundReport(String companyAPIKey,
+                                                          String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
 
-        Call<SimpleResponseObj> call = myService.generateCriminalReport(companyAPIKey, user);
+        Call<ResponseBody> call = myService.generateCriminalReport(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        SimpleResponseObj toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (SimpleResponseObj) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -825,31 +826,31 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link UserHeader}
+     * @return {@link User}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static UserHeader getUser(String companyAPIKey,
-                                     String accessCode) throws AuthenticatingException {
+    public static Object getUser(String companyAPIKey,
+                               String accessCode) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
-        Call<UserHeader> call = myService.getUser(companyAPIKey, user);
+        Call<ResponseBody> call = myService.getUser(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        UserHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (UserHeader) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_USER_HEADER);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -861,30 +862,30 @@ public class AuthenticatingAPICalls {
      *
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @param user          {@link hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader.User}
-     * @return {@link UserHeader}
+     * @param user          {@link User}
+     * @return {@link User}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static UserHeader updateUser(@NonNull String companyAPIKey, @NonNull String accessCode,
-                                        @NonNull UserHeader.User user) throws AuthenticatingException {
+    public static Object updateUser(@NonNull String companyAPIKey, @NonNull String accessCode,
+                                  @NonNull User user) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
         user.setAccessCode(accessCode);
-        Call<UserHeader> call = myService.updateUser(companyAPIKey, user);
+        Call<ResponseBody> call = myService.updateUser(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        UserHeader toReturn = null;
+        Object toReturn = null;
         try {
             Response response = call.execute();
 
             //Check the Error first
-            Object object = response.body();
+			Object object = response.body();
+            ResponseBody errorBody = response.errorBody();
             try {
                 ErrorHandler.checkForAuthenticatingErrorObject(object);
-                ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                ErrorHandler.checkForAuthenticatingError(errorBody.string());
             } catch (NullPointerException nope){}
-            toReturn = (UserHeader) object;
-            AuthenticatingAPICalls.printOutResponseJson(toReturn, AuthenticatingConstants.TYPE_USER_HEADER);
+            toReturn = object;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -910,21 +911,21 @@ public class AuthenticatingAPICalls {
      * @param email         Email (IE, email@email.com)
      * @param phoneNumber   Phone number, numbers only (IE: 2138675309)
      * @param ssn           Social Security Number, 9 digits (IE: 123456789)
-     * @return {@link UserHeader}
+     * @return {@link User}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
-    public static UserHeader updateUser(@NonNull String companyAPIKey,
-                                        @NonNull String accessCode, @Nullable String firstName,
-                                        @Nullable String lastName, @Nullable Integer birthYear, @Nullable Integer birthMonth,
-                                        @Nullable Integer birthDay, @Nullable String address, @Nullable String city,
-                                        @Nullable String state, @Nullable String zipcode, @Nullable String street,
-                                        @Nullable String province, @Nullable String buildingNumber, @Nullable String email,
-                                        @Nullable String phoneNumber, @Nullable String ssn) throws AuthenticatingException {
+    public static Object updateUser(@NonNull String companyAPIKey,
+                                  @NonNull String accessCode, @Nullable String firstName,
+                                  @Nullable String lastName, @Nullable Integer birthYear, @Nullable Integer birthMonth,
+                                  @Nullable Integer birthDay, @Nullable String address, @Nullable String city,
+                                  @Nullable String state, @Nullable String zipcode, @Nullable String street,
+                                  @Nullable String province, @Nullable String buildingNumber, @Nullable String email,
+                                  @Nullable String phoneNumber, @Nullable String ssn) throws AuthenticatingException {
         if (StringUtilities.isNullOrEmpty(accessCode)) {
             throw buildMissingAuthKeyError();
         }
 
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
         if (!isNullOrEmpty(firstName))
             user.setFirstName(firstName);
@@ -986,22 +987,40 @@ public class AuthenticatingAPICalls {
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<AvailableNetworksHeader> call = myService.getAvailableNetworks(companyAPIKey, u);
+        Call<ResponseBody> call = myService.getAvailableNetworks(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<AvailableNetworksHeader>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<AvailableNetworksHeader> call, Response<AvailableNetworksHeader> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    AvailableNetworksHeader myObjectToReturn = (AvailableNetworksHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_AVAILABLE_NETWORKS);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_AVAILABLE_NETWORKS);
+                    AvailableNetworks myObjectToReturn = (AvailableNetworks) RetrofitParser.convert(responseBodyString, AvailableNetworks.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_AVAILABLE_NETWORKS);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_AVAILABLE_NETWORKS);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1014,7 +1033,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<AvailableNetworksHeader> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1050,21 +1069,38 @@ public class AuthenticatingAPICalls {
         s.setNetwork(network);
         s.setSocialMediaAccessToken(socialMediaAccessToken);
         s.setSocialMediaUserId(socialMediaUserId);
-        Call<SimpleResponseObj> call = myService.verifySocialNetworks(companyAPIKey, s);
+        Call<ResponseBody> call = myService.verifySocialNetworks(companyAPIKey, s);
         AuthenticatingAPICalls.printOutRequestJson(s, AuthenticatingConstants.TYPE_SOCIAL_NETWORK_OBJ, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
-
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
                     AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
@@ -1076,7 +1112,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1103,20 +1139,38 @@ public class AuthenticatingAPICalls {
         }
         PhoneVerification p = new PhoneVerification();
         p.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call = myService.verifyPhone(companyAPIKey, p);
+        Call<ResponseBody> call = myService.verifyPhone(companyAPIKey, p);
         AuthenticatingAPICalls.printOutRequestJson(p, AuthenticatingConstants.TYPE_PHONE_VERIFICATION, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1129,7 +1183,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1157,20 +1211,38 @@ public class AuthenticatingAPICalls {
         PhoneVerification p = new PhoneVerification();
         p.setAccessCode(accessCode);
         p.setSmsCode(smsCode);
-        Call<SimpleResponseObj> call = myService.verifyPhoneCode(companyAPIKey, p);
+        Call<ResponseBody> call = myService.verifyPhoneCode(companyAPIKey, p);
         AuthenticatingAPICalls.printOutRequestJson(p, AuthenticatingConstants.TYPE_PHONE_VERIFICATION, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1183,7 +1255,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1206,22 +1278,40 @@ public class AuthenticatingAPICalls {
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call = myService.verifyEmail(companyAPIKey, user);
+        Call<ResponseBody> call = myService.verifyEmail(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1234,7 +1324,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1410,7 +1500,7 @@ public class AuthenticatingAPICalls {
 
         UploadPhotosObj uploadPhotosObj = new UploadPhotosObj();
         uploadPhotosObj.setAccessCode(accessCode);
-        Call<SimpleResponseObj> call;
+        Call<ResponseBody> call;
         switch (type){
 
             case uploadPassport:
@@ -1437,18 +1527,36 @@ public class AuthenticatingAPICalls {
                 call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
                 break;
         }
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1461,7 +1569,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1517,7 +1625,7 @@ public class AuthenticatingAPICalls {
                                 AuthenticatingConstants.TAG_ERROR_RESPONSE);
                     } else {
                         uploadPhotosObj.setAccessCode(accessCode);
-                        Call<SimpleResponseObj> call;
+                        Call<ResponseBody> call;
                         switch (type){
                             case uploadPassport:
                                 call = myService.uploadPassport(companyAPIKey, uploadPhotosObj);
@@ -1536,18 +1644,36 @@ public class AuthenticatingAPICalls {
                                 call = myService.comparePhotos(companyAPIKey, uploadPhotosObj);
                                 break;
                         }
-                        call.enqueue(new Callback<SimpleResponseObj>() {
+                        call.enqueue(new Callback<ResponseBody>() {
                             @Override
-                            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                                 try {
-                                    Object object = response.body();
+                                    ResponseBody object = response.body();
+                                    ResponseBody errorBody = response.errorBody();
+                                    String responseBodyString, errorBodyString;
+                                    try {
+                                        responseBodyString = object.string();
+                                    } catch (Exception e){
+                                        responseBodyString = null;
+                                    }
+                                    try {
+                                        errorBodyString = errorBody.string();
+                                    } catch (Exception e){
+                                        errorBodyString = null;
+                                    }
                                     try {
                                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                                     } catch (NullPointerException nope){}
-                                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                                    if(myObjectToReturn != null) {
+                                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                                    } else {
+                                        AuthenticatingException parseError = buildParsingError();
+                                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                                    }
 
                                 } catch (AuthenticatingException authE) {
                                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1560,7 +1686,7 @@ public class AuthenticatingAPICalls {
                             }
 
                             @Override
-                            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+                            public void onFailure(Call<ResponseBody> call, Throwable t) {
                                 t.printStackTrace();
                                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
                             }
@@ -1584,7 +1710,7 @@ public class AuthenticatingAPICalls {
      * @param listener {@link OnTaskCompleteListener}
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link CheckPhotoResultsHeader.CheckPhotoResults}
+     * @return {@link CheckPhotoResults}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
     public static void checkUploadId(@NonNull final OnTaskCompleteListener listener,
@@ -1596,22 +1722,40 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<CheckPhotoResultsHeader> call = myService.checkUploadId(companyAPIKey, u);
+        Call<ResponseBody> call = myService.checkUploadId(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<CheckPhotoResultsHeader>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<CheckPhotoResultsHeader> call, Response<CheckPhotoResultsHeader> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT_OBJECT);
+                    CheckPhotoResults myObjectToReturn = (CheckPhotoResults) RetrofitParser.convert(responseBodyString, CheckPhotoResults.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULT);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
                     AuthenticatingAPICalls.printOutResponseJson(authE,
@@ -1624,7 +1768,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<CheckPhotoResultsHeader> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()),
                         AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1638,7 +1782,7 @@ public class AuthenticatingAPICalls {
      * @param listener {@link OnTaskCompleteListener}
      * @param companyAPIKey The company api key provided by Authenticating
      * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @return {@link CheckPhotoResultsHeader.CheckPhotoResults}
+     * @return {@link CheckPhotoResults}
      * @throws AuthenticatingException {@link AuthenticatingException}
      */
     public static void checkUploadPassport(@NonNull final OnTaskCompleteListener listener,
@@ -1650,22 +1794,40 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<CheckPhotoResultsHeader> call = myService.checkUploadPassport(companyAPIKey, u);
+        Call<ResponseBody> call = myService.checkUploadPassport(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<CheckPhotoResultsHeader>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<CheckPhotoResultsHeader> call, Response<CheckPhotoResultsHeader> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    CheckPhotoResultsHeader myObjectToReturn = (CheckPhotoResultsHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULTS_HEADER);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT_OBJECT);
+                    CheckPhotoResults myObjectToReturn = (CheckPhotoResults) RetrofitParser.convert(responseBodyString, CheckPhotoResults.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_CHECK_PHOTO_RESULT);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_CHECK_PHOTO_RESULT);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
                     AuthenticatingAPICalls.printOutResponseJson(authE,
@@ -1678,7 +1840,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<CheckPhotoResultsHeader> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()),
                         AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1707,22 +1869,40 @@ public class AuthenticatingAPICalls {
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
-        UserHeader.User u = new UserHeader.User();
+        User u = new User();
         u.setAccessCode(accessCode);
-        Call<QuizObjectHeader> call = myService.getQuiz(companyAPIKey, u);
+        Call<ResponseBody> call = myService.getQuiz(companyAPIKey, u);
         AuthenticatingAPICalls.printOutRequestJson(u, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<QuizObjectHeader>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<QuizObjectHeader> call, Response<QuizObjectHeader> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    QuizObjectHeader myObjectToReturn = (QuizObjectHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_QUIZ_QUESTIONS_HEADER);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_QUIZ_QUESTIONS_HEADER);
+                    QuizObject myObjectToReturn = (QuizObject) RetrofitParser.convert(responseBodyString, QuizObject.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_QUIZ_QUESTIONS);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_QUIZ_QUESTIONS);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1735,7 +1915,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<QuizObjectHeader> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1752,11 +1932,11 @@ public class AuthenticatingAPICalls {
      * @param answers          Array of answer objects that contain the responses to the questions
      *                         that were obtained from the
      *                         {@link AuthenticatingAPICalls#getQuiz(OnTaskCompleteListener, String, String)} endpoint.
-     * @param quizId           The quiz id. This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
+     * @param quizId           The quiz id. This is obtained from the {@link QuizObject} obtained from getQuiz()
      * @param transactionId    The quiz transaction id.
-     *                         This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
+     *                         This is obtained from the {@link QuizObject} obtained from getQuiz()
      * @param responseUniqueId The quiz response unique id.
-     *                         This is obtained from the {@link QuizObjectHeader} obtained from getQuiz()
+     *                         This is obtained from the {@link QuizObject} obtained from getQuiz()
      */
     public static void verifyQuiz(@NonNull final OnTaskCompleteListener listener,
                                   String companyAPIKey,
@@ -1776,20 +1956,38 @@ public class AuthenticatingAPICalls {
         v.setTransactionID(transactionId);
         v.setResponseUniqueId(responseUniqueId);
 
-        Call<SimpleResponseObj> call = myService.verifyQuiz(companyAPIKey, v);
+        Call<ResponseBody> call = myService.verifyQuiz(companyAPIKey, v);
         AuthenticatingAPICalls.printOutRequestJson(v, AuthenticatingConstants.TYPE_VERIFY_QUIZ_OBJ, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1802,7 +2000,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1827,23 +2025,41 @@ public class AuthenticatingAPICalls {
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
 
-        Call<SimpleResponseObj> call = myService.generateCriminalReport(companyAPIKey, user);
+        Call<ResponseBody> call = myService.generateCriminalReport(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<SimpleResponseObj>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<SimpleResponseObj> call, Response<SimpleResponseObj> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    SimpleResponseObj myObjectToReturn = (SimpleResponseObj) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE_OBJ);
+                    SimpleResponse myObjectToReturn = (SimpleResponse) RetrofitParser.convert(responseBodyString, SimpleResponse.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_SIMPLE_RESPONSE);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_SIMPLE_RESPONSE);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
 
                 } catch (AuthenticatingException authE) {
                     listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
@@ -1856,7 +2072,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<SimpleResponseObj> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -1880,27 +2096,107 @@ public class AuthenticatingAPICalls {
                     AuthenticatingConstants.TAG_ERROR_RESPONSE);
             return;
         }
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
-        Call<UserHeader> call = myService.getUser(companyAPIKey, user);
+        Call<ResponseBody> call = myService.getUser(companyAPIKey, user);
         AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<UserHeader>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<UserHeader> call, Response<UserHeader> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Object object = response.body();
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
                     try {
                         ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
                     } catch (NullPointerException nope){}
-                    UserHeader myObjectToReturn = (UserHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER_HEADER);
-                    if (myObjectToReturn == null) {
-                        listener.onTaskComplete(buildGenericErrorObject(),
-                                AuthenticatingConstants.TAG_ERROR_RESPONSE);
+
+                    User myObjectToReturn = (User) RetrofitParser.convert(responseBodyString, User.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_USER);
                     } else {
-                        listener.onTaskComplete(myObjectToReturn,
-                                AuthenticatingConstants.TAG_USER_HEADER);
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                    }
+                } catch (AuthenticatingException authE) {
+                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
+                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                t.printStackTrace();
+                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            }
+        });
+    }
+
+    /**
+     * Update user (overloaded for User Object)
+     *
+     * @param listener      {@link OnTaskCompleteListener}
+     * @param companyAPIKey The company api key provided by Authenticating
+     * @param accessCode    The identifier String given to a user. Obtained when creating the user
+     * @param user          {@link User}
+     */
+    public static void updateUser(@NonNull final OnTaskCompleteListener listener,
+                                  @NonNull String companyAPIKey, @NonNull String accessCode,
+                                  @NonNull User user) {
+        if (StringUtilities.isNullOrEmpty(accessCode)) {
+            listener.onTaskComplete(buildMissingAuthKeyError(),
+                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
+            return;
+        }
+        user.setAccessCode(accessCode);
+        Call<ResponseBody> call = myService.updateUser(companyAPIKey, user);
+        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                try {
+                    ResponseBody object = response.body();
+                    ResponseBody errorBody = response.errorBody();
+                    String responseBodyString, errorBodyString;
+                    try {
+                        responseBodyString = object.string();
+                    } catch (Exception e){
+                        responseBodyString = null;
+                    }
+                    try {
+                        errorBodyString = errorBody.string();
+                    } catch (Exception e){
+                        errorBodyString = null;
+                    }
+                    try {
+                        ErrorHandler.checkForAuthenticatingErrorObject(object);
+                        ErrorHandler.checkForAuthenticatingError(errorBodyString);
+                    } catch (NullPointerException nope){}
+                    User myObjectToReturn = (User) RetrofitParser.convert(responseBodyString, User.class);
+                    if(myObjectToReturn != null) {
+                        AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER);
+                        listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_USER);
+                    } else {
+                        AuthenticatingException parseError = buildParsingError();
+                        listener.onTaskComplete(parseError, AuthenticatingConstants.TAG_ERROR_RESPONSE);
+                        AuthenticatingAPICalls.printOutResponseJson(parseError, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
                     }
 
                 } catch (AuthenticatingException authE) {
@@ -1914,57 +2210,7 @@ public class AuthenticatingAPICalls {
             }
 
             @Override
-            public void onFailure(Call<UserHeader> call, Throwable t) {
-                t.printStackTrace();
-                listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            }
-        });
-    }
-
-    /**
-     * Update user (overloaded for User Object)
-     *
-     * @param listener      {@link OnTaskCompleteListener}
-     * @param companyAPIKey The company api key provided by Authenticating
-     * @param accessCode    The identifier String given to a user. Obtained when creating the user
-     * @param user          {@link hotb.pgmacdesign.authenticatingsdk.datamodels.UserHeader.User}
-     */
-    public static void updateUser(@NonNull final OnTaskCompleteListener listener,
-                                  @NonNull String companyAPIKey, @NonNull String accessCode,
-                                  @NonNull UserHeader.User user) {
-        if (StringUtilities.isNullOrEmpty(accessCode)) {
-            listener.onTaskComplete(buildMissingAuthKeyError(),
-                    AuthenticatingConstants.TAG_ERROR_RESPONSE);
-            return;
-        }
-        user.setAccessCode(accessCode);
-        Call<UserHeader> call = myService.updateUser(companyAPIKey, user);
-        AuthenticatingAPICalls.printOutRequestJson(user, AuthenticatingConstants.TYPE_USER, call);
-        call.enqueue(new Callback<UserHeader>() {
-            @Override
-            public void onResponse(Call<UserHeader> call, Response<UserHeader> response) {
-                try {
-                    Object object = response.body();
-                    try {
-                        ErrorHandler.checkForAuthenticatingErrorObject(object);
-                        ErrorHandler.checkForAuthenticatingError(response.errorBody().string());
-                    } catch (NullPointerException nope){}
-                    UserHeader myObjectToReturn = (UserHeader) object;
-                    AuthenticatingAPICalls.printOutResponseJson(myObjectToReturn, AuthenticatingConstants.TYPE_USER_HEADER);
-                    listener.onTaskComplete(myObjectToReturn, AuthenticatingConstants.TAG_USER_HEADER);
-
-                } catch (AuthenticatingException authE) {
-                    listener.onTaskComplete(authE, AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                    AuthenticatingAPICalls.printOutResponseJson(authE, AuthenticatingConstants.TYPE_AUTHENTICATING_ERROR);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    listener.onTaskComplete(buildErrorObject(e.getMessage()),
-                            AuthenticatingConstants.TAG_ERROR_RESPONSE);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<UserHeader> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 t.printStackTrace();
                 listener.onTaskComplete(buildErrorObject(t.getMessage()), AuthenticatingConstants.TAG_ERROR_RESPONSE);
             }
@@ -2009,7 +2255,7 @@ public class AuthenticatingAPICalls {
             return;
         }
 
-        UserHeader.User user = new UserHeader.User();
+        User user = new User();
         user.setAccessCode(accessCode);
         if (!isNullOrEmpty(firstName))
             user.setFirstName(firstName);
@@ -2066,14 +2312,16 @@ public class AuthenticatingAPICalls {
         return e;
     }
 
-    private static AuthenticatingException buildMissingUserIDError() {
-        AuthenticatingException e = new AuthenticatingException();
-        return buildErrorObject("ddddddddddddddddd");
+    private static AuthenticatingException buildParsingError() {
+        return buildErrorObject(PARSING_CONVERSION_ERROR);
+    }
+
+    private static AuthenticatingException buildMissingAccessCodeError() {
+        return buildErrorObject(MUST_INCLUDE_ACCESS_CODE);
     }
 
     private static AuthenticatingException buildMissingAuthKeyError() {
-        AuthenticatingException e = new AuthenticatingException();
-        return buildErrorObject("You did not include your authKey. This is obtained when you register for an account. Calls will not function without this key");
+        return buildErrorObject(MISSING_AUTH_KEY);
     }
 
     ///////////
@@ -2649,7 +2897,7 @@ public class AuthenticatingAPICalls {
                 file = new File(uri.getEncodedPath());
             }
             /*
-            //To be implemented at a later data:
+            //To be implemented at a later date:
             // https://stackoverflow.com/questions/6935497/android-get-gallery-image-uri-path
             if(file == null){
                 Context context = null;

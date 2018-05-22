@@ -12,9 +12,6 @@ import java.util.Date;
  */
 class Logging {
 
-    private static final String TICK_TIME_PART_1 = "Tick Time: \nActivity == ";
-    private static final String TICK_TIME_PART_2 = "\nHitting Line Number == ";
-    private static final String TICK_TIME_PART_3 = "\nTime taken up until this point == ";
     private static final String TAG = "Authenticating:";
 
     private String screenName;
@@ -35,21 +32,6 @@ class Logging {
         } else {
             this.timeAtInit = timeAtInit;
         }
-    }
-
-    public void tick(Integer lineNumber){
-        String lineStr;
-        if(lineNumber == null){
-            lineStr = "";
-        } else {
-            lineStr = "" + lineNumber;
-        }
-        long now = new Date().getTime();
-        Logging.m(    TICK_TIME_PART_1 + screenName
-                + TICK_TIME_PART_2 + lineStr
-                + TICK_TIME_PART_3 + (now - this.timeAtInit)
-        );
-
     }
 
     /**

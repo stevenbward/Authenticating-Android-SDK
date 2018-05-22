@@ -3,30 +3,21 @@ package hotb.pgmacdesign.authenticatingsdk.datamodels;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Top Level class. This 'header' structure allows easier error parsing.
- * Created by pmacdowell on 2017-07-24.
+ * Created by pmacdowell on 2018-05-07.
  */
+
 public class TopLevelObj {
-    @SerializedName("code")
-    private Integer code;
-    @SerializedName("hasError")
-    private Boolean hasError;
+    @SerializedName("successful")
+    private Boolean successful;
 
-    public Integer getCode() {
-        if(code == null){
-            code = 400;
+    public Boolean getSuccessful() {
+        if(successful == null){
+            this.successful = false;
         }
-        return code;
+        return successful;
     }
 
-    public Boolean getHasError() {
-        if(hasError == null){
-            hasError = true;
-        }
-        return hasError;
-    }
-
-    public void setHasError(Boolean hasError) {
-        this.hasError = hasError;
+    public void setSuccessful(Boolean successful) {
+        this.successful = successful;
     }
 }

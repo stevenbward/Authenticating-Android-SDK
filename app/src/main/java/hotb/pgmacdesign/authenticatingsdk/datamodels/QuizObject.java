@@ -8,81 +8,67 @@ import java.util.List;
  * Quiz Header class encapsulates all of the quiz data for the identity proof test
  * Created by pmacdowell on 2017-08-04.
  */
-public class QuizObjectHeader {
+public class QuizObject  extends TopLevelObj {
 
-    @SerializedName("data")
-    private QuizObject quizObject;
+    @SerializedName("transactionID")
+    private String transactionId;
+    @SerializedName("responseUniqueId")
+    private String responseUniqueId;
+    @SerializedName("quizId")
+    private String quizId;
+    @SerializedName("numQuestions")
+    private String numQuestions;
+    @SerializedName("errorDescription")
+    private String errorDescription;
+    @SerializedName("question")
+    private List<QuizQuestion> quizQuestions;
 
-    public QuizObject getQuizObject() {
-        return quizObject;
+    public String getTransactionId() {
+        return transactionId;
     }
 
-    public void setQuizObject(QuizObject quizObject) {
-        this.quizObject = quizObject;
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
     }
 
-    public static class QuizObject {
+    public String getResponseUniqueId() {
+        return responseUniqueId;
+    }
 
-        @SerializedName("transactionID")
-        private String transactionId;
-        @SerializedName("responseUniqueId")
-        private String responseUniqueId;
-        @SerializedName("quizId")
-        private String quizId;
-        @SerializedName("numQuestions")
-        private String numQuestions;
-        @SerializedName("errorDescription")
-        private String errorDescription;
-        @SerializedName("question")
-        private List<QuizQuestion> quizQuestions;
+    public void setResponseUniqueId(String responseUniqueId) {
+        this.responseUniqueId = responseUniqueId;
+    }
 
-        public String getTransactionId() {
-            return transactionId;
-        }
+    public String getQuizId() {
+        return quizId;
+    }
 
-        public void setTransactionId(String transactionId) {
-            this.transactionId = transactionId;
-        }
+    public void setQuizId(String quizId) {
+        this.quizId = quizId;
+    }
 
-        public String getResponseUniqueId() {
-            return responseUniqueId;
-        }
+    public String getNumQuestions() {
+        return numQuestions;
+    }
 
-        public void setResponseUniqueId(String responseUniqueId) {
-            this.responseUniqueId = responseUniqueId;
-        }
+    public void setNumQuestions(String numQuestions) {
+        this.numQuestions = numQuestions;
+    }
 
-        public String getQuizId() {
-            return quizId;
-        }
+    public String getErrorDescription() {
+        return errorDescription;
+    }
 
-        public void setQuizId(String quizId) {
-            this.quizId = quizId;
-        }
+    public void setErrorDescription(String errorDescription) {
+        this.errorDescription = errorDescription;
+    }
 
-        public String getNumQuestions() {
-            return numQuestions;
-        }
+    public List<QuizQuestion> getQuizQuestions() {
+        return quizQuestions;
+    }
 
-        public void setNumQuestions(String numQuestions) {
-            this.numQuestions = numQuestions;
-        }
-
-        public String getErrorDescription() {
-            return errorDescription;
-        }
-
-        public void setErrorDescription(String errorDescription) {
-            this.errorDescription = errorDescription;
-        }
-
-        public List<QuizQuestion> getQuizQuestions() {
-            return quizQuestions;
-        }
-
-        public void setQuizQuestions(List<QuizQuestion> quizQuestions) {
-            this.quizQuestions = quizQuestions;
-        }
+    public void setQuizQuestions(List<QuizQuestion> quizQuestions) {
+        this.quizQuestions = quizQuestions;
     }
 
     public static class QuizQuestion {

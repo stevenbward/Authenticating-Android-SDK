@@ -39,7 +39,7 @@ public class WebCallsLogging {
         return LOG_JSON_DATA;
     }
 
-    protected static boolean didUserChangeLogging(){
+    static boolean didUserChangeLogging(){
         return USER_CHANGED_LOGGING;
     }
 }

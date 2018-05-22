@@ -13,13 +13,11 @@ class ErrorHandler {
     static void checkForAuthenticatingError(String responseBodyString) throws AuthenticatingException {
         ErrorParsingObj errorParsingObj = parseMessageToError(responseBodyString);
         if(errorParsingObj != null){
-            AuthenticatingException authE = new AuthenticatingException();
-            ErrorParsingObj.ErrorInfo errorInfo = errorParsingObj.getErrorInfo();
-            if(errorInfo != null){
-                authE.setAuthErrorString(errorInfo.getErrorMessage());
-                authE.setAuthErrorStringDetails(errorInfo.getErrorMessage());
+            if(!errorParsingObj.getSuccessful()){
+                AuthenticatingException authE = new AuthenticatingException();
+                authE.setAuthErrorString(errorParsingObj.getErrorMessage());
+                authE.setAuthErrorStringDetails(errorParsingObj.getErrorMessage());
                 throw authE;
-            } else {
             }
         }
         //If nothing else, means it is not an error
@@ -32,11 +30,10 @@ class ErrorHandler {
         } catch (Exception e){}
         ErrorParsingObj errorParsingObj = parseMessageToError(str);
         if(errorParsingObj != null){
-            AuthenticatingException authE = new AuthenticatingException();
-            ErrorParsingObj.ErrorInfo errorInfo = errorParsingObj.getErrorInfo();
-            if(errorInfo != null){
-                authE.setAuthErrorString(errorInfo.getErrorMessage());
-                authE.setAuthErrorStringDetails(errorInfo.getErrorMessage());
+            if(!errorParsingObj.getSuccessful()){
+                AuthenticatingException authE = new AuthenticatingException();
+                authE.setAuthErrorString(errorParsingObj.getErrorMessage());
+                authE.setAuthErrorStringDetails(errorParsingObj.getErrorMessage());
                 throw authE;
             }
         }

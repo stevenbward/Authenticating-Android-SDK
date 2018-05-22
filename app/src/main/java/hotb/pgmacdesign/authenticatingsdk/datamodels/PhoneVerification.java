@@ -10,7 +10,7 @@ import hotb.pgmacdesign.authenticatingsdk.networking.AuthenticatingAPICalls;
  * Created by pmacdowell on 2017-07-24.
  */
 
-public class PhoneVerification {
+public class PhoneVerification  extends TopLevelObj {
     @SerializedName("accessCode")
     private String accessCode;
     @SerializedName("smsCode")
