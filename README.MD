@@ -1,9 +1,7 @@
 [![Platform](https://img.shields.io/badge/platform-android-green.svg)](http://developer.android.com/index.html)
 [![API](https://img.shields.io/badge/API-14%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=14)
 [![JitPack](https://jitpack.io/v/stevenbward/Authenticating-Android-SDK.svg)](https://jitpack.io/#stevenbward/Authenticating-Android-SDK)
-<!--
 [![Build Status](https://travis-ci.org/stevenbward/Authenticating-Android-SDK.svg?branch=master)](https://travis-ci.org/stevenbward/Authenticating-Android-SDK)
--->
 
 
 # Introduction
